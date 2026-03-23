@@ -577,10 +577,10 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
 <div id="loginScreen">
  <div class="login-card">
  <div class="login-top">
- <div class="login-logo"></div>
+ <div class="login-logo">🎓</div>
  <div class="login-brand">TrustED</div>
  <div class="login-school">Lotus Valley International School, Gurugram<br>Staff Portal · AI Tools &amp; Security Hub</div>
- <div class="testing-badge">TESTING MODE — Any Gmail works</div>
+ <div class="testing-badge">⚠️ TESTING MODE — Any Gmail works</div>
  </div>
  <hr class="login-divider">
  <div class="login-form-title">Sign in with Google</div>
@@ -619,13 +619,13 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <div class="tagline">Lotus Valley International School<br>Gurugram</div>
  </div>
  <nav>
- <a class="nav-item active" onclick="switchPage('dashboard',this)">Dashboard</a>
- <a class="nav-item" onclick="switchPage('aitoolbox',this)">AI Tools</a>
- <a class="nav-item" onclick="switchPage('security',this)">Security</a>
- <a class="nav-item" onclick="switchPage('cyber',this)">Cyber Tips</a>
- <a class="nav-item" onclick="switchPage('resources',this)">Resources</a>
- <a class="nav-item" onclick="switchPage('settings',this)">Settings</a>
- <a class="nav-item" onclick="switchPage('account',this)">My Account</a>
+ <a class="nav-item active" onclick="switchPage('dashboard',this)"><span class="nav-icon">🏠</span> Dashboard</a>
+ <a class="nav-item" onclick="switchPage('aitoolbox',this)"><span class="nav-icon">✦</span> AI Tools</a>
+ <a class="nav-item" onclick="switchPage('security',this)"><span class="nav-icon">🔒</span> Security</a>
+ <a class="nav-item" onclick="switchPage('cyber',this)"><span class="nav-icon">🛡️</span> Cyber Tips</a>
+ <a class="nav-item" onclick="switchPage('resources',this)"><span class="nav-icon">📚</span> Resources</a>
+ <a class="nav-item" onclick="switchPage('settings',this)"><span class="nav-icon">⚙️</span> Settings</a>
+ <a class="nav-item" onclick="switchPage('account',this)"><span class="nav-icon">👤</span> My Account</a>
  </nav>
  <div class="sidebar-footer" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])">
  <div class="avatar" id="sbInitials">?</div>
@@ -637,13 +637,13 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <header class="topbar">
  <div class="topbar-title">TrustED</div>
  <div class="search-box">
- 
+ <span>🔍</span>
  <input type="text" id="searchInput" placeholder="Search resources…" onkeydown="handleSearch(event)">
  </div>
  <div class="topbar-actions">
- <div class="icon-btn"></div>
- <div class="icon-btn" onclick="switchPage('resources',document.querySelectorAll('.nav-item')[4])"></div>
- <div class="icon-btn" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])"></div>
+ <div class="icon-btn">🔔</div>
+ <div class="icon-btn" onclick="switchPage('resources',document.querySelectorAll('.nav-item')[4])">❓</div>
+ <div class="icon-btn" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])">👤</div>
  </div>
  </header>
 
@@ -658,7 +658,7 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <p class="welcome-sub">Your digital classroom is secured. Today is a perfect day to explore new AI pedagogical tools and verify research integrity.</p>
  </div>
  <div class="integrity-card">
- 
+ <span class="integrity-icon">🛡️</span>
  <span class="secure-badge">Secure Session</span>
  <div class="integrity-pct">System Integrity: 100%</div>
  <div class="integrity-sub">All educator protocols are active.</div>
@@ -669,20 +669,20 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <a class="view-all" onclick="switchPage('aitoolbox',document.querySelectorAll('.nav-item')[1])">View Full Directory →</a>
  </div>
  <div class="tools-grid">
- <div class="tool-card"><div class="tool-icon teal"></div><h3>Gamma</h3><p>AI-powered presentations and document creation that respects scholarly formats.</p><div class="tags"><span class="tag">Visual Design</span><span class="tag">Slide Deck</span></div><a href="https://gamma.app" target="_blank" class="btn btn-primary btn-full">Open Gamma ↗</a></div>
- <div class="tool-card"><div class="tool-icon green"></div><h3>AI Checkers</h3><p>Detect AI-generated text in student submissions using industry-leading tools.</p><div class="tags"><span class="tag">Integrity</span><span class="tag">Detection</span></div><a href="https://gptzero.me" target="_blank" class="btn btn-outline btn-full">Open GPTZero ↗</a></div>
- <div class="tool-card"><div class="tool-icon warm"></div><h3>Paraphrasers</h3><p>Refine academic tone and clarity for complex research papers with QuillBot.</p><div class="tags"><span class="tag">Writing</span><span class="tag">Academic</span></div><a href="https://quillbot.com" target="_blank" class="btn btn-outline btn-full">Open QuillBot ↗</a></div>
+ <div class="tool-card"><div class="tool-icon teal">📊</div><h3>Gamma</h3><p>AI-powered presentations and document creation that respects scholarly formats.</p><div class="tags"><span class="tag">Visual Design</span><span class="tag">Slide Deck</span></div><a href="https://gamma.app" target="_blank" class="btn btn-primary btn-full">Open Gamma ↗</a></div>
+ <div class="tool-card"><div class="tool-icon green">🔍</div><h3>AI Checkers</h3><p>Detect AI-generated text in student submissions using industry-leading tools.</p><div class="tags"><span class="tag">Integrity</span><span class="tag">Detection</span></div><a href="https://gptzero.me" target="_blank" class="btn btn-outline btn-full">Open GPTZero ↗</a></div>
+ <div class="tool-card"><div class="tool-icon warm">✏️</div><h3>Paraphrasers</h3><p>Refine academic tone and clarity for complex research papers with QuillBot.</p><div class="tags"><span class="tag">Writing</span><span class="tag">Academic</span></div><a href="https://quillbot.com" target="_blank" class="btn btn-outline btn-full">Open QuillBot ↗</a></div>
  </div>
  <div class="dashboard-bottom">
  <div class="auth-hub">
- <div class="auth-hub-header"><div class="auth-icon"></div><div><h3>Authentication Hub</h3><p>Your session is secured. <a class="inline-link" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2])">View Security Guide →</a></p></div></div>
+ <div class="auth-hub-header"><div class="auth-icon">🔑</div><div><h3>Authentication Hub</h3><p>Your session is secured. <a class="inline-link" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2])">View Security Guide →</a></p></div></div>
  <div class="auth-methods">
- <div class="auth-method"><div><div class="auth-method-name">School Email Verified</div><div class="auth-method-meta">@lotusvalleygurgaon.com</div></div></div>
- <div class="auth-method"><div><div class="auth-method-name">Domain Lock Active</div><div class="auth-method-meta">School staff only</div></div></div>
+ <div class="auth-method"><span style="font-size:22px;">✉️</span><div><div class="auth-method-name">School Email Verified</div><div class="auth-method-meta">@lotusvalleygurgaon.com</div></div><span class="check-green">✅</span></div>
+ <div class="auth-method"><span style="font-size:22px;">🏫</span><div><div class="auth-method-name">Domain Lock Active</div><div class="auth-method-meta">School staff only</div></div><span class="check-green">✅</span></div>
  </div>
  </div>
  <div class="tip-card">
- <div class="tip-eyebrow">Tip of the Day</div>
+ <div class="tip-eyebrow">💡 Tip of the Day</div>
  <h3>The "Human Proxy" Trap</h3>
  <p>Cybercriminals target educators by impersonating students in distress. Always verify unusual requests through official channels before acting.</p>
  <a class="view-all" onclick="switchPage('cyber',document.querySelectorAll('.nav-item')[3])">Learn about Phishing →</a>
@@ -694,14 +694,14 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <div class="page" id="page-aitoolbox">
  <div style="margin-bottom:30px;"><div class="eyebrow">Curated Resources</div><h1 class="page-title">AI Toolbox</h1><p class="page-desc">Ethical, effective AI tools vetted for the modern classroom.</p><div class="quick-tip"> <span><strong>Quick Tip:</strong>Always check AI-generated content for bias and accuracy before sharing with students.</span></div></div>
  <div class="tools-section"><div class="tools-section-header"><div class="section-title">Presentation Tools</div><div class="tools-section-label">Visual Storytelling</div></div>
- <div class="featured-tool"><div class="featured-thumb"><span class="featured-badge">Featured Tool</span></div><div><span class="top-rated">TOP RATED</span><h3>Gamma</h3><p>Create beautiful, engaging presentations from a simple prompt. No more deck formatting.</p><div class="featured-tool-btns"><a href="https://gamma.app" target="_blank" class="btn btn-primary">Open Gamma ↗</a><a href="https://gamma.app/docs" target="_blank" class="btn btn-outline">Docs</a></div></div></div>
- <div class="side-card"><div class="tool-icon teal" style="flex-shrink:0;"></div><div style="flex:1;"><h3>Beautiful.ai</h3><p>Smart slides that automatically adapt to your content.</p><a href="https://www.beautiful.ai" target="_blank" class="explore-link">Open Beautiful.ai →</a></div></div>
+ <div class="featured-tool"><div class="featured-thumb">📊<span class="featured-badge">Featured Tool</span></div><div><span class="top-rated">⭐ TOP RATED</span><h3>Gamma</h3><p>Create beautiful, engaging presentations from a simple prompt. No more deck formatting.</p><div class="featured-tool-btns"><a href="https://gamma.app" target="_blank" class="btn btn-primary">Open Gamma ↗</a><a href="https://gamma.app/docs" target="_blank" class="btn btn-outline">📖 Docs</a></div></div></div>
+ <div class="side-card"><div class="tool-icon teal" style="flex-shrink:0;">🎨</div><div style="flex:1;"><h3>Beautiful.ai</h3><p>Smart slides that automatically adapt to your content.</p><a href="https://www.beautiful.ai" target="_blank" class="explore-link">Open Beautiful.ai →</a></div></div>
  </div>
  <div class="tools-section"><div class="tools-section-header"><div><div class="eyebrow" style="margin-bottom:2px;">Academic Integrity</div><div class="section-title">AI Detection &amp; Verification</div></div></div>
  <div class="verification-grid">
- <div class="verify-card"><h4>GPTZero</h4><p>Gold standard AI detection for large language model patterns.</p><a href="https://gptzero.me" target="_blank" class="view-details">OPEN GPTZERO ↗</a></div>
- <div class="verify-card"><h4>Originality.ai</h4><p>Enterprise-grade plagiarism and AI detector for academic verification.</p><a href="https://originality.ai" target="_blank" class="view-details">OPEN ORIGINALITY.AI ↗</a></div>
- <div class="verify-card"><h4>Copyleaks</h4><p>Multilingual AI text detection across 30+ languages.</p><a href="https://copyleaks.com" target="_blank" class="view-details">OPEN COPYLEAKS ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">🔴</span><h4>GPTZero</h4><p>Gold standard AI detection for large language model patterns.</p><a href="https://gptzero.me" target="_blank" class="view-details">OPEN GPTZERO ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">👁️</span><h4>Originality.ai</h4><p>Enterprise-grade plagiarism and AI detector for academic verification.</p><a href="https://originality.ai" target="_blank" class="view-details">OPEN ORIGINALITY.AI ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">🛡️</span><h4>Copyleaks</h4><p>Multilingual AI text detection across 30+ languages.</p><a href="https://copyleaks.com" target="_blank" class="view-details">OPEN COPYLEAKS ↗</a></div>
  </div>
  </div>
  <div class="tools-section"><div class="tools-section-header"><div class="section-title">Writing Assistants</div><div class="tools-section-label">Enhanced Composition</div></div>
@@ -712,12 +712,12 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  </div>
  <div class="tools-section"><div class="tools-section-header"><div class="section-title">More Tools</div></div>
  <div class="verification-grid">
- <div class="verify-card"><h4>ChatGPT</h4><p>General-purpose AI for lesson planning and drafting content.</p><a href="https://chat.openai.com" target="_blank" class="view-details">OPEN CHATGPT ↗</a></div>
- <div class="verify-card"><h4>Notion AI</h4><p>Organise notes and create lesson plans with built-in AI.</p><a href="https://www.notion.so" target="_blank" class="view-details">OPEN NOTION ↗</a></div>
- <div class="verify-card"><h4>Canva</h4><p>Design worksheets and classroom visuals using Canva's AI tools.</p><a href="https://www.canva.com" target="_blank" class="view-details">OPEN CANVA ↗</a></div>
- <div class="verify-card"><h4>Duck.ai</h4><p>Privacy-focused AI by DuckDuckGo. No tracking, no data stored — safe for school use.</p><a href="https://duck.ai" target="_blank" class="view-details">OPEN DUCK.AI ↗</a></div>
- <div class="verify-card"><h4>Claude (Anthropic)</h4><p>Advanced AI assistant for research, writing, analysis and lesson preparation.</p><a href="https://claude.ai" target="_blank" class="view-details">OPEN CLAUDE ↗</a></div>
- <div class="verify-card"><h4>Gemini (Google)</h4><p>Google's AI assistant — great for research, summarising content and classroom ideas.</p><a href="https://gemini.google.com" target="_blank" class="view-details">OPEN GEMINI ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">🤖</span><h4>ChatGPT</h4><p>General-purpose AI for lesson planning and drafting content.</p><a href="https://chat.openai.com" target="_blank" class="view-details">OPEN CHATGPT ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">📑</span><h4>Notion AI</h4><p>Organise notes and create lesson plans with built-in AI.</p><a href="https://www.notion.so" target="_blank" class="view-details">OPEN NOTION ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">🎨</span><h4>Canva</h4><p>Design worksheets and classroom visuals using Canva's AI tools.</p><a href="https://www.canva.com" target="_blank" class="view-details">OPEN CANVA ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">🦆</span><h4>Duck.ai</h4><p>Privacy-focused AI by DuckDuckGo. No tracking, no data stored — safe for school use.</p><a href="https://duck.ai" target="_blank" class="view-details">OPEN DUCK.AI ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">🧠</span><h4>Claude (Anthropic)</h4><p>Advanced AI assistant for research, writing, analysis and lesson preparation.</p><a href="https://claude.ai" target="_blank" class="view-details">OPEN CLAUDE ↗</a></div>
+ <div class="verify-card"><span class="verify-icon">♊</span><h4>Gemini (Google)</h4><p>Google's AI assistant — great for research, summarising content and classroom ideas.</p><a href="https://gemini.google.com" target="_blank" class="view-details">OPEN GEMINI ↗</a></div>
  </div>
  </div>
  </div>
@@ -740,19 +740,19 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  </div>
  <div class="phishing-section">
  <div class="phishing-grid">
- <div class="phishing-main"><div class="critical-label">Critical Skill</div><h3>Avoiding Phishing in Schools</h3><p>Education is the #1 target for credential harvesting.</p><div class="threat-box"><div class="threat-label">Recent Threat</div><p>Fake "IT Admin" emails requesting password updates for LMS accounts are on the rise.</p></div></div>
+ <div class="phishing-main"><div class="critical-label">⚠️ Critical Skill</div><h3>Avoiding Phishing in Schools</h3><p>Education is the #1 target for credential harvesting.</p><div class="threat-box"><div class="threat-label">🚨 Recent Threat</div><p>Fake "IT Admin" emails requesting password updates for LMS accounts are on the rise.</p></div></div>
  <div class="phishing-tips">
- <div class="phishing-tip-card"><h5>Verify the Sender</h5><p>Hover over the sender name to reveal the real email address.</p></div>
- <div class="phishing-tip-card"><h5>Hover Before Clicking</h5><p>Check the true destination URL in the bottom of your browser.</p></div>
+ <div class="phishing-tip-card"><h5>🔎 Verify the Sender</h5><p>Hover over the sender name to reveal the real email address.</p></div>
+ <div class="phishing-tip-card"><h5>🖱️ Hover Before Clicking</h5><p>Check the true destination URL in the bottom of your browser.</p></div>
  <div class="phishing-tip-card"><h5>⏰ Urgency is a Red Flag</h5><p>Phishers use "Immediate Action Required" lines to induce panic.</p></div>
- <div class="phishing-tip-card"><h5>Reporting Protocol</h5><p>Use the "Report Phishing" button to alert the security team.</p></div>
+ <div class="phishing-tip-card"><h5>📧 Reporting Protocol</h5><p>Use the "Report Phishing" button to alert the security team.</p></div>
  </div>
  </div>
  </div>
  <div class="resources-strip">
- <a href="https://staysafeonline.org/resources/" target="_blank" class="resource-item"><div><div class="resource-item-title">Safety Poster PDF</div><div class="resource-item-meta">Printable for staff rooms.</div></div></a>
- <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="resource-item"><div><div class="resource-item-title">2FA Setup Guide</div><div class="resource-item-meta">Secure your school accounts.</div></div></a>
- <a href="https://www.ncsa.org/home" target="_blank" class="resource-item"><div><div class="resource-item-title">Acceptable Use Policy</div><div class="resource-item-meta">Updated for 2024 standards.</div></div></a>
+ <a href="https://staysafeonline.org/resources/" target="_blank" class="resource-item"><span style="font-size:20px;">⬇️</span><div><div class="resource-item-title">Safety Poster PDF</div><div class="resource-item-meta">Printable for staff rooms.</div></div></a>
+ <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="resource-item"><span style="font-size:20px;">🛡️</span><div><div class="resource-item-title">2FA Setup Guide</div><div class="resource-item-meta">Secure your school accounts.</div></div></a>
+ <a href="https://www.ncsa.org/home" target="_blank" class="resource-item"><span style="font-size:20px;">📄</span><div><div class="resource-item-title">Acceptable Use Policy</div><div class="resource-item-meta">Updated for 2024 standards.</div></div></a>
  </div>
  <div class="cyber-quote"><blockquote>"The most sophisticated firewall in education is a vigilant, well-informed teacher."</blockquote><cite>TrustED Security Collective • 2024</cite></div>
  </div>
@@ -760,7 +760,7 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <!-- SECURITY -->
  <div class="page" id="page-security">
  <div class="eyebrow">Educator Safety Guide</div>
- <div class="security-hero"><div><h1 class="page-title">Your Digital Sanctuary:<br>Security Hub</h1><p class="page-desc">Protecting your academic research and student data doesn't have to be complex.</p></div><div class="shield-graphic"></div></div>
+ <div class="security-hero"><div><h1 class="page-title">Your Digital Sanctuary:<br>Security Hub</h1><p class="page-desc">Protecting your academic research and student data doesn't have to be complex.</p></div><div class="shield-graphic">🛡️</div></div>
  <div class="security-section"><div class="section-num">1. The 2FA Foundation</div>
  <div class="twofa-grid">
  <div class="twofa-explain"><h4>What is 2FA?</h4><p>Think of it as a double-locked door. Even if someone finds your password, they still need a special token to enter.</p><div class="check-item">Something you know (Password)</div><div class="check-item">Something you have (Authenticator App)</div></div>
@@ -769,9 +769,9 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  </div>
  <div class="security-section"><div class="section-num">2. Recommended Authenticators</div>
  <div class="auth-apps">
- <div class="auth-app-card"><span class="app-badge badge-easy">EASIEST</span><div class="app-logo g"></div><h4>Google Authenticator</h4><p>Minimalist, works offline, syncs to your Google Account.</p><a href="https://support.google.com/accounts/answer/1066447" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
- <div class="auth-app-card"><span class="app-badge badge-inst">INSTITUTIONAL</span><div class="app-logo m"></div><h4>Microsoft Authenticator</h4><p>Best for Office 365. One-tap "Approve" notifications.</p><a href="https://www.microsoft.com/en-us/security/mobile-authenticator-app" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
- <div class="auth-app-card"><span class="app-badge badge-multi">MULTI-DEVICE</span><div class="app-logo a"></div><h4>Authy by Twilio</h4><p>Encrypted backups across Laptop, Tablet, and Phone.</p><a href="https://authy.com/download/" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
+ <div class="auth-app-card"><span class="app-badge badge-easy">EASIEST</span><div class="app-logo g">🟢</div><h4>Google Authenticator</h4><p>Minimalist, works offline, syncs to your Google Account.</p><a href="https://support.google.com/accounts/answer/1066447" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
+ <div class="auth-app-card"><span class="app-badge badge-inst">INSTITUTIONAL</span><div class="app-logo m">🔵</div><h4>Microsoft Authenticator</h4><p>Best for Office 365. One-tap "Approve" notifications.</p><a href="https://www.microsoft.com/en-us/security/mobile-authenticator-app" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
+ <div class="auth-app-card"><span class="app-badge badge-multi">MULTI-DEVICE</span><div class="app-logo a">🔴</div><h4>Authy by Twilio</h4><p>Encrypted backups across Laptop, Tablet, and Phone.</p><a href="https://authy.com/download/" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
  </div>
  </div>
  <div class="email-secure">
@@ -892,9 +892,9 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  </div>
  <div class="acc-card"><h3>Session &amp; Security</h3>
  <div class="acc-row"><span class="acc-row-label">Sign-in Method</span><span class="acc-row-value">School Email Verified</span></div>
- <div class="acc-row"><span class="acc-row-label">Domain Lock</span><span class="acc-status">Active</span></div>
- <div class="acc-row"><span class="acc-row-label">Plan</span><span class="acc-status">Free · School Staff</span></div>
- <div class="acc-row"><span class="acc-row-label">Session</span><span class="acc-status">Secure</span></div>
+ <div class="acc-row"><span class="acc-row-label">Domain Lock</span><span class="acc-status">✅ Active</span></div>
+ <div class="acc-row"><span class="acc-row-label">Plan</span><span class="acc-status">🎓 Free · School Staff</span></div>
+ <div class="acc-row"><span class="acc-row-label">Session</span><span class="acc-status">🟢 Secure</span></div>
  <div class="acc-row"><span class="acc-row-label">Signed in at</span><span class="acc-row-value" id="accTime">—</span></div>
  </div>
  </div>
