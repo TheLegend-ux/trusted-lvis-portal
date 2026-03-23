@@ -8,291 +8,291 @@
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <script>
-// ─── CONFIG ───────────────────────────────────────
-// ⚠️  TESTING:    'gmail.com'  (any Gmail works)
-// 🏫  PRODUCTION: 'lotusvalleygurgaon.com'
-var ALLOWED_DOMAIN   = 'gmail.com';
+// CONFIG 
+// TESTING: 'gmail.com' (any Gmail works)
+// PRODUCTION: 'lotusvalleygurgaon.com'
+var ALLOWED_DOMAIN = 'gmail.com';
 var GOOGLE_CLIENT_ID = '494444176354-m3jlfvmkjom40pqetnm7e482vvtmo3jk.apps.googleusercontent.com';
-// ─────────────────────────────────────────────────
+// 
 
 var currentUser = null;
 
-/* ════ GOOGLE SIGN-IN ════ */
+/* GOOGLE SIGN-IN */
 function handleCredentialResponse(response) {
-  var payload = parseJwt(response.credential);
-  var email   = payload.email || '';
-  var domain  = email.split('@')[1] || '';
-  if (domain !== ALLOWED_DOMAIN) {
-    showLoginError('⛔ Access denied. Only @' + ALLOWED_DOMAIN + ' accounts are permitted.');
-    google.accounts.id.disableAutoSelect();
-    return;
-  }
-  currentUser = {
-    name:     payload.name,
-    email:    payload.email,
-    picture:  payload.picture || null,
-    initials: initials(payload.name)
-  };
-  sessionStorage.setItem('tu', JSON.stringify(currentUser));
-  launchApp();
+ var payload = parseJwt(response.credential);
+ var email = payload.email || '';
+ var domain = email.split('@')[1] || '';
+ if (domain !== ALLOWED_DOMAIN) {
+ showLoginError(' Access denied. Only @' + ALLOWED_DOMAIN + ' accounts are permitted.');
+ google.accounts.id.disableAutoSelect();
+ return;
+ }
+ currentUser = {
+ name: payload.name,
+ email: payload.email,
+ picture: payload.picture || null,
+ initials: initials(payload.name)
+ };
+ sessionStorage.setItem('tu', JSON.stringify(currentUser));
+ launchApp();
 }
 
 function parseJwt(token) {
-  var b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
-  return JSON.parse(decodeURIComponent(
-    atob(b64).split('').map(function(c){
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join('')
-  ));
+ var b64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+ return JSON.parse(decodeURIComponent(
+ atob(b64).split('').map(function(c){
+ return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+ }).join('')
+ ));
 }
 
 function showLoginError(msg) {
-  var e = document.getElementById('loginError');
-  e.textContent = msg; e.style.display = 'block';
+ var e = document.getElementById('loginError');
+ e.textContent = msg; e.style.display = 'block';
 }
 
 function initials(n){ return n.split(' ').filter(Boolean).map(function(w){return w[0];}).join('').slice(0,2).toUpperCase(); }
 
 function launchApp() {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appShell').style.display    = 'flex';
-  // sidebar
-  var avatarHtml = currentUser.picture
-    ? '<img src="'+currentUser.picture+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">'
-    : currentUser.initials;
-  if (currentUser.picture) {
-    document.getElementById('sbInitials').innerHTML = avatarHtml;
-  } else {
-    document.getElementById('sbInitials').textContent = currentUser.initials;
-  }
-  document.getElementById('sbName').textContent   = currentUser.name;
-  document.getElementById('sbEmail').textContent  = currentUser.email;
-  // account page avatar
-  var bigAvatar = currentUser.picture
-    ? '<img src="'+currentUser.picture+'" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.3);">'
-    : currentUser.initials;
-  if (currentUser.picture) {
-    document.getElementById('accInitials').innerHTML = bigAvatar;
-  } else {
-    document.getElementById('accInitials').textContent = currentUser.initials;
-  }
-  document.getElementById('accName').textContent  = currentUser.name;
-  document.getElementById('accEmail').textContent = currentUser.email;
-  document.getElementById('accDName').textContent = currentUser.name;
-  document.getElementById('accDEmail').textContent= currentUser.email;
-  document.getElementById('dashName').textContent = currentUser.name.split(' ')[0] + '.';
-  var t = document.getElementById('accTime');
-  if(t){ var d=new Date(); t.textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+', '+d.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'}); }
+ document.getElementById('loginScreen').style.display = 'none';
+ document.getElementById('appShell').style.display = 'flex';
+ // sidebar
+ var avatarHtml = currentUser.picture
+ ? '<img src="'+currentUser.picture+'" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">'
+ : currentUser.initials;
+ if (currentUser.picture) {
+ document.getElementById('sbInitials').innerHTML = avatarHtml;
+ } else {
+ document.getElementById('sbInitials').textContent = currentUser.initials;
+ }
+ document.getElementById('sbName').textContent = currentUser.name;
+ document.getElementById('sbEmail').textContent = currentUser.email;
+ // account page avatar
+ var bigAvatar = currentUser.picture
+ ? '<img src="'+currentUser.picture+'" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:3px solid rgba(255,255,255,.3);">'
+ : currentUser.initials;
+ if (currentUser.picture) {
+ document.getElementById('accInitials').innerHTML = bigAvatar;
+ } else {
+ document.getElementById('accInitials').textContent = currentUser.initials;
+ }
+ document.getElementById('accName').textContent = currentUser.name;
+ document.getElementById('accEmail').textContent = currentUser.email;
+ document.getElementById('accDName').textContent = currentUser.name;
+ document.getElementById('accDEmail').textContent= currentUser.email;
+ document.getElementById('dashName').textContent = currentUser.name.split(' ')[0] + '.';
+ var t = document.getElementById('accTime');
+ if(t){ var d=new Date(); t.textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+', '+d.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'}); }
 }
 
 function signOut() {
-  currentUser = null;
-  sessionStorage.removeItem('tu');
-  document.getElementById('appShell').style.display    = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('loginError').style.display  = 'none';
-  google.accounts.id.disableAutoSelect();
-  switchPage('dashboard', document.querySelectorAll('.nav-item')[0]);
+ currentUser = null;
+ sessionStorage.removeItem('tu');
+ document.getElementById('appShell').style.display = 'none';
+ document.getElementById('loginScreen').style.display = 'flex';
+ document.getElementById('loginError').style.display = 'none';
+ google.accounts.id.disableAutoSelect();
+ switchPage('dashboard', document.querySelectorAll('.nav-item')[0]);
 }
 
-/* ════ NAV ════ */
+/* NAV */
 function switchPage(pageId, navEl) {
-  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
-  var t = document.getElementById('page-'+pageId); if(t) t.classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
-  if(navEl) navEl.classList.add('active');
-  var ph={dashboard:'Search resources…',aitoolbox:'Search AI tools…',security:'Search safety guides…',
-          cyber:'Search cyber tips…',resources:'Search resources…',settings:'Search settings…',account:'Search account…'};
-  var si=document.getElementById('searchInput'); if(si) si.placeholder=ph[pageId]||'Search…';
-  window.scrollTo(0,0);
+ document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+ var t = document.getElementById('page-'+pageId); if(t) t.classList.add('active');
+ document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+ if(navEl) navEl.classList.add('active');
+ var ph={dashboard:'Search resources…',aitoolbox:'Search AI tools…',security:'Search safety guides…',
+ cyber:'Search cyber tips…',resources:'Search resources…',settings:'Search settings…',account:'Search account…'};
+ var si=document.getElementById('searchInput'); if(si) si.placeholder=ph[pageId]||'Search…';
+ window.scrollTo(0,0);
 }
 function handleSearch(e) {
-  if(e.key!=='Enter') return;
-  var q=e.target.value.toLowerCase().trim(); if(!q) return;
-  var n=document.querySelectorAll('.nav-item');
-  if(['gamma','slide','presentation','beautiful','quill','grammarly','grammar','write','paraphrase','gptzero','originality','copyleaks','chatgpt','notion','canva'].some(function(k){return q.includes(k);})) switchPage('aitoolbox',n[1]);
-  else if(['phish','cyber','safety','threat'].some(function(k){return q.includes(k);})) switchPage('cyber',n[3]);
-  else if(['2fa','password','authenticator','security'].some(function(k){return q.includes(k);})) switchPage('security',n[2]);
-  else if(['ncert','book','textbook','class','grade','subject'].some(function(k){return q.includes(k);})) switchPage('resources',n[4]);
-  else if(['resource','guide','ferpa','policy'].some(function(k){return q.includes(k);})) switchPage('resources',n[4]);
-  else if(['setting','notification'].some(function(k){return q.includes(k);})) switchPage('settings',n[5]);
-  else if(['account','profile','logout'].some(function(k){return q.includes(k);})) switchPage('account',n[6]);
+ if(e.key!=='Enter') return;
+ var q=e.target.value.toLowerCase().trim(); if(!q) return;
+ var n=document.querySelectorAll('.nav-item');
+ if(['gamma','slide','presentation','beautiful','quill','grammarly','grammar','write','paraphrase','gptzero','originality','copyleaks','chatgpt','notion','canva'].some(function(k){return q.includes(k);})) switchPage('aitoolbox',n[1]);
+ else if(['phish','cyber','safety','threat'].some(function(k){return q.includes(k);})) switchPage('cyber',n[3]);
+ else if(['2fa','password','authenticator','security'].some(function(k){return q.includes(k);})) switchPage('security',n[2]);
+ else if(['ncert','book','textbook','class','grade','subject'].some(function(k){return q.includes(k);})) switchPage('resources',n[4]);
+ else if(['resource','guide','ferpa','policy'].some(function(k){return q.includes(k);})) switchPage('resources',n[4]);
+ else if(['setting','notification'].some(function(k){return q.includes(k);})) switchPage('settings',n[5]);
+ else if(['account','profile','logout'].some(function(k){return q.includes(k);})) switchPage('account',n[6]);
 }
 
-/* ════ NCERT ════ */
+/* NCERT */
 var selGrade='9', selStream='all';
 
 var NCERT = {
-  '9':{ streams:false, subjects:[
-    {name:'Mathematics',    icon:'📐', s:'all', bg:'#e8f0f0', c:'#2d5f5f',
-     books:[{t:'Mathematics',u:'https://ncert.nic.in/textbook.php?iemh1=0-15'}]},
-    {name:'Science',        icon:'🔬', s:'all', bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Science',u:'https://ncert.nic.in/textbook.php?iesc1=0-15'}]},
-    {name:'Social Science', icon:'🌍', s:'all', bg:'#fdf0e6', c:'#c8763a',
-     books:[{t:'Geography: Contemporary India – I',u:'https://ncert.nic.in/textbook.php?iess1=0-5'},
-            {t:'Economics',u:'https://ncert.nic.in/textbook.php?iess2=0-6'},
-            {t:'History: India & the Contemporary World – I',u:'https://ncert.nic.in/textbook.php?iess3=0-5'},
-            {t:'Political Science: Democratic Politics – I',u:'https://ncert.nic.in/textbook.php?iess4=0-4'}]},
-    {name:'English',        icon:'📖', s:'all', bg:'#eef0fe', c:'#3949ab',
-     books:[{t:'Beehive (Main Reader)',u:'https://ncert.nic.in/textbook.php?iebe1=0-9'},
-            {t:'Moments (Supplementary)',u:'https://ncert.nic.in/textbook.php?iemo1=0-9'}]},
-    {name:'Hindi',          icon:'📚', s:'all', bg:'#fdeaea', c:'#c0392b',
-     books:[{t:'Kshitij – I',u:'https://ncert.nic.in/textbook.php?ihks1=0-13'},
-            {t:'Kritika – I',u:'https://ncert.nic.in/textbook.php?ihkr1=0-3'},
-            {t:'Sparsh – I',u:'https://ncert.nic.in/textbook.php?ihsp1=0-10'},
-            {t:'Sanchayan – I',u:'https://ncert.nic.in/textbook.php?ihsa1=0-4'}]},
-    {name:'Sanskrit',       icon:'🕉️', s:'all', bg:'#f5e6ff', c:'#7b1fa2',
-     books:[{t:'Shemushi – I',u:'https://ncert.nic.in/textbook.php?ihsh1=0-10'}]}
-  ]},
-  '10':{ streams:false, subjects:[
-    {name:'Mathematics',    icon:'📐', s:'all', bg:'#e8f0f0', c:'#2d5f5f',
-     books:[{t:'Mathematics',u:'https://ncert.nic.in/textbook.php?jemh1=0-15'}]},
-    {name:'Science',        icon:'🔬', s:'all', bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Science',u:'https://ncert.nic.in/textbook.php?jesc1=0-16'}]},
-    {name:'Social Science', icon:'🌍', s:'all', bg:'#fdf0e6', c:'#c8763a',
-     books:[{t:'Geography: Contemporary India – II',u:'https://ncert.nic.in/textbook.php?jess1=0-5'},
-            {t:'Economics: Understanding Economic Development',u:'https://ncert.nic.in/textbook.php?jess2=0-7'},
-            {t:'History: India & the Contemporary World – II',u:'https://ncert.nic.in/textbook.php?jess3=0-5'},
-            {t:'Political Science: Democratic Politics – II',u:'https://ncert.nic.in/textbook.php?jess4=0-5'}]},
-    {name:'English',        icon:'📖', s:'all', bg:'#eef0fe', c:'#3949ab',
-     books:[{t:'First Flight (Main Reader)',u:'https://ncert.nic.in/textbook.php?jeff1=0-9'},
-            {t:'Footprints Without Feet',u:'https://ncert.nic.in/textbook.php?jefp1=0-9'}]},
-    {name:'Hindi',          icon:'📚', s:'all', bg:'#fdeaea', c:'#c0392b',
-     books:[{t:'Kshitij – II',u:'https://ncert.nic.in/textbook.php?jhks1=0-12'},
-            {t:'Kritika – II',u:'https://ncert.nic.in/textbook.php?jhkr1=0-3'},
-            {t:'Sparsh – II',u:'https://ncert.nic.in/textbook.php?jhsp1=0-14'},
-            {t:'Sanchayan – II',u:'https://ncert.nic.in/textbook.php?jhsy1=0-3'}]},
-    {name:'Sanskrit',       icon:'🕉️', s:'all', bg:'#f5e6ff', c:'#7b1fa2',
-     books:[{t:'Shemushi – II',u:'https://ncert.nic.in/textbook.php?jhsk1=0-10'}]}
-  ]},
-  '11':{ streams:true, subjects:[
-    {name:'Physics',         icon:'⚡',  s:'science',  bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Physics Part I',u:'https://ncert.nic.in/textbook.php?keph1=0-8'},{t:'Physics Part II',u:'https://ncert.nic.in/textbook.php?keph2=0-7'}]},
-    {name:'Chemistry',       icon:'🧪',  s:'science',  bg:'#e8f0f0', c:'#2d5f5f',
-     books:[{t:'Chemistry Part I',u:'https://ncert.nic.in/textbook.php?kech1=0-7'},{t:'Chemistry Part II',u:'https://ncert.nic.in/textbook.php?kech2=0-7'}]},
-    {name:'Biology',         icon:'🧬',  s:'science',  bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Biology',u:'https://ncert.nic.in/textbook.php?kebo1=0-22'}]},
-    {name:'Mathematics',     icon:'📐',  s:'science',  bg:'#e8f0f0', c:'#2d5f5f',
-     books:[{t:'Mathematics',u:'https://ncert.nic.in/textbook.php?kemh1=0-16'}]},
-    {name:'Computer Science',icon:'💻',  s:'science',  bg:'#eef0fe', c:'#3949ab',
-     books:[{t:'Computer Science with Python',u:'https://ncert.nic.in/textbook.php?kecs1=0-8'}]},
-    {name:'Accountancy',     icon:'📊',  s:'commerce', bg:'#fff8e6', c:'#9a6800',
-     books:[{t:'Accountancy – I',u:'https://ncert.nic.in/textbook.php?keac1=0-9'},{t:'Accountancy – II',u:'https://ncert.nic.in/textbook.php?keac2=0-5'}]},
-    {name:'Business Studies',icon:'💼',  s:'commerce', bg:'#fdf0e6', c:'#c8763a',
-     books:[{t:'Business Studies',u:'https://ncert.nic.in/textbook.php?kebs1=0-11'}]},
-    {name:'Economics',       icon:'📈',  s:'commerce', bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Indian Economic Development',u:'https://ncert.nic.in/textbook.php?keec1=0-10'},{t:'Statistics for Economics',u:'https://ncert.nic.in/textbook.php?kest1=0-8'}]},
-    {name:'Mathematics',     icon:'📐',  s:'commerce', bg:'#e8f0f0', c:'#2d5f5f',
-     books:[{t:'Mathematics',u:'https://ncert.nic.in/textbook.php?kemh1=0-16'}]},
-    {name:'History',         icon:'🏛️',  s:'arts',     bg:'#fdf0e6', c:'#c8763a',
-     books:[{t:'Themes in World History',u:'https://ncert.nic.in/textbook.php?kehs1=0-7'}]},
-    {name:'Geography',       icon:'🌍',  s:'arts',     bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Fundamentals of Physical Geography',u:'https://ncert.nic.in/textbook.php?kegy2=0-14'},{t:'India: Physical Environment',u:'https://ncert.nic.in/textbook.php?kegy1=0-6'}]},
-    {name:'Political Science',icon:'⚖️', s:'arts',     bg:'#eef0fe', c:'#3949ab',
-     books:[{t:'Political Theory',u:'https://ncert.nic.in/textbook.php?keps1=0-10'},{t:'Indian Constitution at Work',u:'https://ncert.nic.in/textbook.php?keps2=0-9'}]},
-    {name:'Psychology',      icon:'🧠',  s:'arts',     bg:'#f5e6ff', c:'#7b1fa2',
-     books:[{t:'Psychology',u:'https://ncert.nic.in/textbook.php?kepy1=0-9'}]},
-    {name:'Sociology',       icon:'👥',  s:'arts',     bg:'#fdeaea', c:'#c0392b',
-     books:[{t:'Introducing Sociology',u:'https://ncert.nic.in/textbook.php?kesy1=0-5'},{t:'Understanding Society',u:'https://ncert.nic.in/textbook.php?kesy2=0-5'}]},
-    {name:'English',         icon:'📖',  s:'all',      bg:'#eef0fe', c:'#3949ab',
-     books:[{t:'Hornbill (Main Reader)',u:'https://ncert.nic.in/textbook.php?kehb1=0-14'},{t:'Snapshots (Supplementary)',u:'https://ncert.nic.in/textbook.php?kesp1=0-5'}]},
-    {name:'Hindi',           icon:'📚',  s:'all',      bg:'#fdeaea', c:'#c0392b',
-     books:[{t:'Aroh – I',u:'https://ncert.nic.in/textbook.php?khar1=0-16'},{t:'Vitan – I',u:'https://ncert.nic.in/textbook.php?khvt1=0-5'}]}
-  ]},
-  '12':{ streams:true, subjects:[
-    {name:'Physics',         icon:'⚡',  s:'science',  bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Physics Part I',u:'https://ncert.nic.in/textbook.php?leph1=0-8'},{t:'Physics Part II',u:'https://ncert.nic.in/textbook.php?leph2=0-7'}]},
-    {name:'Chemistry',       icon:'🧪',  s:'science',  bg:'#e8f0f0', c:'#2d5f5f',
-     books:[{t:'Chemistry Part I',u:'https://ncert.nic.in/textbook.php?lech1=0-8'},{t:'Chemistry Part II',u:'https://ncert.nic.in/textbook.php?lech2=0-8'}]},
-    {name:'Biology',         icon:'🧬',  s:'science',  bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Biology',u:'https://ncert.nic.in/textbook.php?lebo1=0-16'}]},
-    {name:'Mathematics',     icon:'📐',  s:'science',  bg:'#e8f0f0', c:'#2d5f5f',
-     books:[{t:'Mathematics Part I',u:'https://ncert.nic.in/textbook.php?lemh1=0-7'},{t:'Mathematics Part II',u:'https://ncert.nic.in/textbook.php?lemh2=0-6'}]},
-    {name:'Computer Science',icon:'💻',  s:'science',  bg:'#eef0fe', c:'#3949ab',
-     books:[{t:'Computer Science with Python',u:'https://ncert.nic.in/textbook.php?lecs1=0-8'}]},
-    {name:'Accountancy',     icon:'📊',  s:'commerce', bg:'#fff8e6', c:'#9a6800',
-     books:[{t:'Accountancy – I',u:'https://ncert.nic.in/textbook.php?leac1=0-9'},{t:'Accountancy – II',u:'https://ncert.nic.in/textbook.php?leac2=0-4'}]},
-    {name:'Business Studies',icon:'💼',  s:'commerce', bg:'#fdf0e6', c:'#c8763a',
-     books:[{t:'Business Studies Part I',u:'https://ncert.nic.in/textbook.php?lebs1=0-6'},{t:'Business Studies Part II',u:'https://ncert.nic.in/textbook.php?lebs2=0-5'}]},
-    {name:'Economics',       icon:'📈',  s:'commerce', bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Macroeconomics',u:'https://ncert.nic.in/textbook.php?leec1=0-6'},{t:'Introductory Microeconomics',u:'https://ncert.nic.in/textbook.php?leec2=0-6'}]},
-    {name:'Mathematics',     icon:'📐',  s:'commerce', bg:'#e8f0f0', c:'#2d5f5f',
-     books:[{t:'Mathematics Part I',u:'https://ncert.nic.in/textbook.php?lemh1=0-7'},{t:'Mathematics Part II',u:'https://ncert.nic.in/textbook.php?lemh2=0-6'}]},
-    {name:'History',         icon:'🏛️',  s:'arts',     bg:'#fdf0e6', c:'#c8763a',
-     books:[{t:'Themes in Indian History – Part I',u:'https://ncert.nic.in/textbook.php?lehh1=0-5'},{t:'Themes in Indian History – Part II',u:'https://ncert.nic.in/textbook.php?lehh2=0-5'},{t:'Themes in Indian History – Part III',u:'https://ncert.nic.in/textbook.php?lehs3=0-4'}]},
-    {name:'Geography',       icon:'🌍',  s:'arts',     bg:'#e6f2ec', c:'#4a8c6f',
-     books:[{t:'Fundamentals of Human Geography',u:'https://ncert.nic.in/textbook.php?legy1=0-8'},{t:'India: People and Economy',u:'https://ncert.nic.in/textbook.php?legy2=0-9'}]},
-    {name:'Political Science',icon:'⚖️', s:'arts',     bg:'#eef0fe', c:'#3949ab',
-     books:[{t:'Contemporary World Politics',u:'https://ncert.nic.in/textbook.php?leps1=0-9'},{t:'Politics in India Since Independence',u:'https://ncert.nic.in/textbook.php?leps2=0-9'}]},
-    {name:'Psychology',      icon:'🧠',  s:'arts',     bg:'#f5e6ff', c:'#7b1fa2',
-     books:[{t:'Psychology',u:'https://ncert.nic.in/textbook.php?lepy1=0-8'}]},
-    {name:'Sociology',       icon:'👥',  s:'arts',     bg:'#fdeaea', c:'#c0392b',
-     books:[{t:'Indian Society',u:'https://ncert.nic.in/textbook.php?lesy1=0-7'},{t:'Social Change and Development in India',u:'https://ncert.nic.in/textbook.php?lesy2=0-8'}]},
-    {name:'English',         icon:'📖',  s:'all',      bg:'#eef0fe', c:'#3949ab',
-     books:[{t:'Flamingo (Main Reader)',u:'https://ncert.nic.in/textbook.php?lefl1=0-13'},{t:'Vistas (Supplementary)',u:'https://ncert.nic.in/textbook.php?levt1=0-6'}]},
-    {name:'Hindi',           icon:'📚',  s:'all',      bg:'#fdeaea', c:'#c0392b',
-     books:[{t:'Aroh – II',u:'https://ncert.nic.in/textbook.php?lhar1=0-15'},{t:'Vitan – II',u:'https://ncert.nic.in/textbook.php?lhvt1=0-3'}]}
-  ]}
+ '9':{ streams:false, subjects:[
+ {name:'Mathematics', icon:'', s:'all', bg:'#e8f0f0', c:'#2d5f5f',
+ books:[{t:'Mathematics',u:'https://ncert.nic.in/textbook.php?iemh1=0-15'}]},
+ {name:'Science', icon:'', s:'all', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Science',u:'https://ncert.nic.in/textbook.php?iesc1=0-15'}]},
+ {name:'Social Science', icon:'', s:'all', bg:'#fdf0e6', c:'#c8763a',
+ books:[{t:'Geography: Contemporary India – I',u:'https://ncert.nic.in/textbook.php?iess1=0-5'},
+ {t:'Economics',u:'https://ncert.nic.in/textbook.php?iess2=0-6'},
+ {t:'History: India & the Contemporary World – I',u:'https://ncert.nic.in/textbook.php?iess3=0-5'},
+ {t:'Political Science: Democratic Politics – I',u:'https://ncert.nic.in/textbook.php?iess4=0-4'}]},
+ {name:'English', icon:'', s:'all', bg:'#eef0fe', c:'#3949ab',
+ books:[{t:'Beehive (Main Reader)',u:'https://ncert.nic.in/textbook.php?iebe1=0-9'},
+ {t:'Moments (Supplementary)',u:'https://ncert.nic.in/textbook.php?iemo1=0-9'}]},
+ {name:'Hindi', icon:'', s:'all', bg:'#fdeaea', c:'#c0392b',
+ books:[{t:'Kshitij – I',u:'https://ncert.nic.in/textbook.php?ihks1=0-13'},
+ {t:'Kritika – I',u:'https://ncert.nic.in/textbook.php?ihkr1=0-3'},
+ {t:'Sparsh – I',u:'https://ncert.nic.in/textbook.php?ihsp1=0-10'},
+ {t:'Sanchayan – I',u:'https://ncert.nic.in/textbook.php?ihsa1=0-4'}]},
+ {name:'Sanskrit', icon:'', s:'all', bg:'#f5e6ff', c:'#7b1fa2',
+ books:[{t:'Shemushi – I',u:'https://ncert.nic.in/textbook.php?ihsh1=0-10'}]}
+ ]},
+ '10':{ streams:false, subjects:[
+ {name:'Mathematics', icon:'', s:'all', bg:'#e8f0f0', c:'#2d5f5f',
+ books:[{t:'Mathematics',u:'https://ncert.nic.in/textbook.php?jemh1=0-15'}]},
+ {name:'Science', icon:'', s:'all', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Science',u:'https://ncert.nic.in/textbook.php?jesc1=0-16'}]},
+ {name:'Social Science', icon:'', s:'all', bg:'#fdf0e6', c:'#c8763a',
+ books:[{t:'Geography: Contemporary India – II',u:'https://ncert.nic.in/textbook.php?jess1=0-5'},
+ {t:'Economics: Understanding Economic Development',u:'https://ncert.nic.in/textbook.php?jess2=0-7'},
+ {t:'History: India & the Contemporary World – II',u:'https://ncert.nic.in/textbook.php?jess3=0-5'},
+ {t:'Political Science: Democratic Politics – II',u:'https://ncert.nic.in/textbook.php?jess4=0-5'}]},
+ {name:'English', icon:'', s:'all', bg:'#eef0fe', c:'#3949ab',
+ books:[{t:'First Flight (Main Reader)',u:'https://ncert.nic.in/textbook.php?jeff1=0-9'},
+ {t:'Footprints Without Feet',u:'https://ncert.nic.in/textbook.php?jefp1=0-9'}]},
+ {name:'Hindi', icon:'', s:'all', bg:'#fdeaea', c:'#c0392b',
+ books:[{t:'Kshitij – II',u:'https://ncert.nic.in/textbook.php?jhks1=0-12'},
+ {t:'Kritika – II',u:'https://ncert.nic.in/textbook.php?jhkr1=0-3'},
+ {t:'Sparsh – II',u:'https://ncert.nic.in/textbook.php?jhsp1=0-14'},
+ {t:'Sanchayan – II',u:'https://ncert.nic.in/textbook.php?jhsy1=0-3'}]},
+ {name:'Sanskrit', icon:'', s:'all', bg:'#f5e6ff', c:'#7b1fa2',
+ books:[{t:'Shemushi – II',u:'https://ncert.nic.in/textbook.php?jhsk1=0-10'}]}
+ ]},
+ '11':{ streams:true, subjects:[
+ {name:'Physics', icon:'', s:'science', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Physics Part I',u:'https://ncert.nic.in/textbook.php?keph1=0-8'},{t:'Physics Part II',u:'https://ncert.nic.in/textbook.php?keph2=0-7'}]},
+ {name:'Chemistry', icon:'', s:'science', bg:'#e8f0f0', c:'#2d5f5f',
+ books:[{t:'Chemistry Part I',u:'https://ncert.nic.in/textbook.php?kech1=0-7'},{t:'Chemistry Part II',u:'https://ncert.nic.in/textbook.php?kech2=0-7'}]},
+ {name:'Biology', icon:'', s:'science', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Biology',u:'https://ncert.nic.in/textbook.php?kebo1=0-22'}]},
+ {name:'Mathematics', icon:'', s:'science', bg:'#e8f0f0', c:'#2d5f5f',
+ books:[{t:'Mathematics',u:'https://ncert.nic.in/textbook.php?kemh1=0-16'}]},
+ {name:'Computer Science',icon:'', s:'science', bg:'#eef0fe', c:'#3949ab',
+ books:[{t:'Computer Science with Python',u:'https://ncert.nic.in/textbook.php?kecs1=0-8'}]},
+ {name:'Accountancy', icon:'', s:'commerce', bg:'#fff8e6', c:'#9a6800',
+ books:[{t:'Accountancy – I',u:'https://ncert.nic.in/textbook.php?keac1=0-9'},{t:'Accountancy – II',u:'https://ncert.nic.in/textbook.php?keac2=0-5'}]},
+ {name:'Business Studies',icon:'', s:'commerce', bg:'#fdf0e6', c:'#c8763a',
+ books:[{t:'Business Studies',u:'https://ncert.nic.in/textbook.php?kebs1=0-11'}]},
+ {name:'Economics', icon:'', s:'commerce', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Indian Economic Development',u:'https://ncert.nic.in/textbook.php?keec1=0-10'},{t:'Statistics for Economics',u:'https://ncert.nic.in/textbook.php?kest1=0-8'}]},
+ {name:'Mathematics', icon:'', s:'commerce', bg:'#e8f0f0', c:'#2d5f5f',
+ books:[{t:'Mathematics',u:'https://ncert.nic.in/textbook.php?kemh1=0-16'}]},
+ {name:'History', icon:'', s:'arts', bg:'#fdf0e6', c:'#c8763a',
+ books:[{t:'Themes in World History',u:'https://ncert.nic.in/textbook.php?kehs1=0-7'}]},
+ {name:'Geography', icon:'', s:'arts', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Fundamentals of Physical Geography',u:'https://ncert.nic.in/textbook.php?kegy2=0-14'},{t:'India: Physical Environment',u:'https://ncert.nic.in/textbook.php?kegy1=0-6'}]},
+ {name:'Political Science',icon:'', s:'arts', bg:'#eef0fe', c:'#3949ab',
+ books:[{t:'Political Theory',u:'https://ncert.nic.in/textbook.php?keps1=0-10'},{t:'Indian Constitution at Work',u:'https://ncert.nic.in/textbook.php?keps2=0-9'}]},
+ {name:'Psychology', icon:'', s:'arts', bg:'#f5e6ff', c:'#7b1fa2',
+ books:[{t:'Psychology',u:'https://ncert.nic.in/textbook.php?kepy1=0-9'}]},
+ {name:'Sociology', icon:'', s:'arts', bg:'#fdeaea', c:'#c0392b',
+ books:[{t:'Introducing Sociology',u:'https://ncert.nic.in/textbook.php?kesy1=0-5'},{t:'Understanding Society',u:'https://ncert.nic.in/textbook.php?kesy2=0-5'}]},
+ {name:'English', icon:'', s:'all', bg:'#eef0fe', c:'#3949ab',
+ books:[{t:'Hornbill (Main Reader)',u:'https://ncert.nic.in/textbook.php?kehb1=0-14'},{t:'Snapshots (Supplementary)',u:'https://ncert.nic.in/textbook.php?kesp1=0-5'}]},
+ {name:'Hindi', icon:'', s:'all', bg:'#fdeaea', c:'#c0392b',
+ books:[{t:'Aroh – I',u:'https://ncert.nic.in/textbook.php?khar1=0-16'},{t:'Vitan – I',u:'https://ncert.nic.in/textbook.php?khvt1=0-5'}]}
+ ]},
+ '12':{ streams:true, subjects:[
+ {name:'Physics', icon:'', s:'science', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Physics Part I',u:'https://ncert.nic.in/textbook.php?leph1=0-8'},{t:'Physics Part II',u:'https://ncert.nic.in/textbook.php?leph2=0-7'}]},
+ {name:'Chemistry', icon:'', s:'science', bg:'#e8f0f0', c:'#2d5f5f',
+ books:[{t:'Chemistry Part I',u:'https://ncert.nic.in/textbook.php?lech1=0-8'},{t:'Chemistry Part II',u:'https://ncert.nic.in/textbook.php?lech2=0-8'}]},
+ {name:'Biology', icon:'', s:'science', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Biology',u:'https://ncert.nic.in/textbook.php?lebo1=0-16'}]},
+ {name:'Mathematics', icon:'', s:'science', bg:'#e8f0f0', c:'#2d5f5f',
+ books:[{t:'Mathematics Part I',u:'https://ncert.nic.in/textbook.php?lemh1=0-7'},{t:'Mathematics Part II',u:'https://ncert.nic.in/textbook.php?lemh2=0-6'}]},
+ {name:'Computer Science',icon:'', s:'science', bg:'#eef0fe', c:'#3949ab',
+ books:[{t:'Computer Science with Python',u:'https://ncert.nic.in/textbook.php?lecs1=0-8'}]},
+ {name:'Accountancy', icon:'', s:'commerce', bg:'#fff8e6', c:'#9a6800',
+ books:[{t:'Accountancy – I',u:'https://ncert.nic.in/textbook.php?leac1=0-9'},{t:'Accountancy – II',u:'https://ncert.nic.in/textbook.php?leac2=0-4'}]},
+ {name:'Business Studies',icon:'', s:'commerce', bg:'#fdf0e6', c:'#c8763a',
+ books:[{t:'Business Studies Part I',u:'https://ncert.nic.in/textbook.php?lebs1=0-6'},{t:'Business Studies Part II',u:'https://ncert.nic.in/textbook.php?lebs2=0-5'}]},
+ {name:'Economics', icon:'', s:'commerce', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Macroeconomics',u:'https://ncert.nic.in/textbook.php?leec1=0-6'},{t:'Introductory Microeconomics',u:'https://ncert.nic.in/textbook.php?leec2=0-6'}]},
+ {name:'Mathematics', icon:'', s:'commerce', bg:'#e8f0f0', c:'#2d5f5f',
+ books:[{t:'Mathematics Part I',u:'https://ncert.nic.in/textbook.php?lemh1=0-7'},{t:'Mathematics Part II',u:'https://ncert.nic.in/textbook.php?lemh2=0-6'}]},
+ {name:'History', icon:'', s:'arts', bg:'#fdf0e6', c:'#c8763a',
+ books:[{t:'Themes in Indian History – Part I',u:'https://ncert.nic.in/textbook.php?lehh1=0-5'},{t:'Themes in Indian History – Part II',u:'https://ncert.nic.in/textbook.php?lehh2=0-5'},{t:'Themes in Indian History – Part III',u:'https://ncert.nic.in/textbook.php?lehs3=0-4'}]},
+ {name:'Geography', icon:'', s:'arts', bg:'#e6f2ec', c:'#4a8c6f',
+ books:[{t:'Fundamentals of Human Geography',u:'https://ncert.nic.in/textbook.php?legy1=0-8'},{t:'India: People and Economy',u:'https://ncert.nic.in/textbook.php?legy2=0-9'}]},
+ {name:'Political Science',icon:'', s:'arts', bg:'#eef0fe', c:'#3949ab',
+ books:[{t:'Contemporary World Politics',u:'https://ncert.nic.in/textbook.php?leps1=0-9'},{t:'Politics in India Since Independence',u:'https://ncert.nic.in/textbook.php?leps2=0-9'}]},
+ {name:'Psychology', icon:'', s:'arts', bg:'#f5e6ff', c:'#7b1fa2',
+ books:[{t:'Psychology',u:'https://ncert.nic.in/textbook.php?lepy1=0-8'}]},
+ {name:'Sociology', icon:'', s:'arts', bg:'#fdeaea', c:'#c0392b',
+ books:[{t:'Indian Society',u:'https://ncert.nic.in/textbook.php?lesy1=0-7'},{t:'Social Change and Development in India',u:'https://ncert.nic.in/textbook.php?lesy2=0-8'}]},
+ {name:'English', icon:'', s:'all', bg:'#eef0fe', c:'#3949ab',
+ books:[{t:'Flamingo (Main Reader)',u:'https://ncert.nic.in/textbook.php?lefl1=0-13'},{t:'Vistas (Supplementary)',u:'https://ncert.nic.in/textbook.php?levt1=0-6'}]},
+ {name:'Hindi', icon:'', s:'all', bg:'#fdeaea', c:'#c0392b',
+ books:[{t:'Aroh – II',u:'https://ncert.nic.in/textbook.php?lhar1=0-15'},{t:'Vitan – II',u:'https://ncert.nic.in/textbook.php?lhvt1=0-3'}]}
+ ]}
 };
 
 function selectGrade(g, el) {
-  selGrade = g; selStream = 'all';
-  document.querySelectorAll('.grade-tab').forEach(function(t){t.classList.remove('active');});
-  el.classList.add('active');
-  var st = document.getElementById('streamTabs');
-  if(g==='11'||g==='12'){
-    st.style.display='flex';
-    document.querySelectorAll('.stream-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
-  } else { st.style.display='none'; }
-  renderBooks();
+ selGrade = g; selStream = 'all';
+ document.querySelectorAll('.grade-tab').forEach(function(t){t.classList.remove('active');});
+ el.classList.add('active');
+ var st = document.getElementById('streamTabs');
+ if(g==='11'||g==='12'){
+ st.style.display='flex';
+ document.querySelectorAll('.stream-tab').forEach(function(t,i){t.classList.toggle('active',i===0);});
+ } else { st.style.display='none'; }
+ renderBooks();
 }
 function selectStream(s, el) {
-  selStream=s;
-  document.querySelectorAll('.stream-tab').forEach(function(t){t.classList.remove('active');});
-  el.classList.add('active');
-  renderBooks();
+ selStream=s;
+ document.querySelectorAll('.stream-tab').forEach(function(t){t.classList.remove('active');});
+ el.classList.add('active');
+ renderBooks();
 }
 function renderBooks() {
-  var data = NCERT[selGrade];
-  var list = data.subjects.filter(function(s){
-    if(!data.streams) return true;
-    if(selStream==='all') return true;
-    return s.s===selStream||s.s==='all';
-  });
-  var html='<div class="ncert-grid">';
-  list.forEach(function(sub){
-    var badge = (sub.s!=='all'&&data.streams) ? '<div class="ncert-badge" style="color:'+sub.c+';">'+sub.s.charAt(0).toUpperCase()+sub.s.slice(1)+'</div>' : '';
-    html+='<div class="ncert-card" style="border-top:3px solid '+sub.c+';">';
-    html+='<div class="ncert-card-head" style="background:'+sub.bg+';">';
-    html+='<span style="font-size:22px;">'+sub.icon+'</span>';
-    html+='<div><div class="ncert-card-name" style="color:'+sub.c+';">'+sub.name+'</div>'+badge+'</div></div>';
-    html+='<div class="ncert-book-list">';
-    sub.books.forEach(function(b){
-      html+='<a href="'+b.u+'" target="_blank" class="ncert-book-row"><span>📄</span><span class="nbr-title">'+b.t+'</span><span class="nbr-arr">↗</span></a>';
-    });
-    html+='</div></div>';
-  });
-  html+='</div>';
-  document.getElementById('ncertGrid').innerHTML=html;
+ var data = NCERT[selGrade];
+ var list = data.subjects.filter(function(s){
+ if(!data.streams) return true;
+ if(selStream==='all') return true;
+ return s.s===selStream||s.s==='all';
+ });
+ var html='<div class="ncert-grid">';
+ list.forEach(function(sub){
+ var badge = (sub.s!=='all'&&data.streams) ? '<div class="ncert-badge" style="color:'+sub.c+';">'+sub.s.charAt(0).toUpperCase()+sub.s.slice(1)+'</div>' : '';
+ html+='<div class="ncert-card" style="border-top:3px solid '+sub.c+';">';
+ html+='<div class="ncert-card-head" style="background:'+sub.bg+';">';
+ html+='<span style="font-size:22px;">'+sub.icon+'</span>';
+ html+='<div><div class="ncert-card-name" style="color:'+sub.c+';">'+sub.name+'</div>'+badge+'</div></div>';
+ html+='<div class="ncert-book-list">';
+ sub.books.forEach(function(b){
+ html+='<a href="'+b.u+'" target="_blank" class="ncert-book-row"><span class="nbr-title">'+b.t+'</span><span class="nbr-arr">↗</span></a>';
+ });
+ html+='</div></div>';
+ });
+ html+='</div>';
+ document.getElementById('ncertGrid').innerHTML=html;
 }
 </script>
 
 <style>
 :root{
-  --bg:#f5f3ee; --sidebar-bg:#faf9f6; --white:#fff;
-  --dark:#1a2332; --dark-teal:#1e3a3a; --teal:#2d5f5f; --teal-mid:#3d7a7a; --teal-light:#e8f0f0;
-  --accent:#4a8c6f; --accent-light:#e6f2ec;
-  --warm:#c8763a; --warm-light:#fdf0e6;
-  --red-light:#fdeaea; --red:#c0392b;
-  --text:#2c3e50; --text-mid:#5a6a7a; --text-light:#8a9aaa;
-  --border:#e0dbd2;
-  --shadow:0 2px 12px rgba(30,58,58,.08); --shadow-lg:0 8px 32px rgba(30,58,58,.14);
-  --r:12px; --rl:16px;
+ --bg:#f5f3ee; --sidebar-bg:#faf9f6; --white:#fff;
+ --dark:#1a2332; --dark-teal:#1e3a3a; --teal:#2d5f5f; --teal-mid:#3d7a7a; --teal-light:#e8f0f0;
+ --accent:#4a8c6f; --accent-light:#e6f2ec;
+ --warm:#c8763a; --warm-light:#fdf0e6;
+ --red-light:#fdeaea; --red:#c0392b;
+ --text:#2c3e50; --text-mid:#5a6a7a; --text-light:#8a9aaa;
+ --border:#e0dbd2;
+ --shadow:0 2px 12px rgba(30,58,58,.08); --shadow-lg:0 8px 32px rgba(30,58,58,.14);
+ --r:12px; --rl:16px;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
-/* ══ LOGIN ══ */
+/* LOGIN */
 #loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#0b1f1f 0%,#1e3a3a 45%,#0d2a2a 100%);position:relative;overflow:hidden;}
 #loginScreen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 25% 60%,rgba(45,95,95,.5) 0%,transparent 55%),radial-gradient(ellipse at 75% 40%,rgba(74,140,111,.25) 0%,transparent 55%);}
 #loginScreen::after{content:'';position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,.05) 1px,transparent 1px);background-size:32px 32px;}
@@ -310,7 +310,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 #loginError{display:none;background:var(--red-light);border:1px solid #f5c6c6;border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px;}
 .login-footer-note{font-size:11px;color:var(--text-light);text-align:center;margin-top:18px;}
 
-/* ══ APP SHELL ══ */
+/* APP SHELL */
 #appShell{display:none;min-height:100vh;}
 .sidebar{width:200px;min-width:200px;background:var(--sidebar-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;position:fixed;top:0;left:0;bottom:0;z-index:100;}
 .sidebar-logo{padding:0 20px 22px;border-bottom:1px solid var(--border);margin-bottom:12px;}
@@ -339,7 +339,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .page.active{display:block;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── SHARED ── */
+/* SHARED */
 .eyebrow{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:8px;}
 .section-title{font-family:'Lora',serif;font-size:22px;font-weight:700;color:var(--dark);}
 .section-sub{font-size:13px;color:var(--text-light);margin-top:2px;}
@@ -359,7 +359,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .pill{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:var(--white);border:1px solid var(--border);border-radius:24px;font-size:12px;font-weight:600;color:var(--text);text-decoration:none;transition:all .2s;}
 .pill:hover{background:var(--teal-light);border-color:var(--teal-mid);color:var(--teal);}
 
-/* ── DASHBOARD ── */
+/* DASHBOARD */
 .hero-row{display:grid;grid-template-columns:1fr auto;gap:24px;align-items:start;margin-bottom:36px;}
 .welcome-title{font-family:'Lora',serif;font-size:38px;font-weight:700;line-height:1.1;color:var(--dark);margin-bottom:8px;}
 .welcome-title em{color:var(--teal);font-style:italic;}
@@ -392,7 +392,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .tip-card h3{font-family:'Lora',serif;font-size:16px;font-weight:700;margin-bottom:8px;color:var(--dark);}
 .tip-card p{font-size:12px;color:var(--text-mid);line-height:1.65;margin-bottom:14px;}
 
-/* ── AI TOOLBOX ── */
+/* AI TOOLBOX */
 .quick-tip{background:var(--accent-light);border:1px solid #b8d9c8;border-radius:var(--r);padding:12px 16px;font-size:13px;color:var(--accent);font-style:italic;margin-top:14px;display:inline-flex;align-items:flex-start;gap:8px;max-width:520px;}
 .featured-tool{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:22px;display:grid;grid-template-columns:180px 1fr;gap:22px;align-items:center;margin-bottom:14px;}
 .featured-thumb{background:linear-gradient(135deg,#e8f0f0,var(--teal-light));border-radius:var(--r);aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;font-size:38px;position:relative;overflow:hidden;}
@@ -426,7 +426,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .explore-link{font-size:13px;font-weight:700;color:var(--teal);text-decoration:none;}
 .explore-link:hover{text-decoration:underline;}
 
-/* ── CYBER TIPS ── */
+/* CYBER TIPS */
 .cyber-hero{display:grid;grid-template-columns:1fr 280px;gap:28px;margin-bottom:32px;align-items:start;}
 .cyber-hero-quote{background:var(--dark-teal);border-radius:var(--rl);padding:26px;color:#fff;}
 .cyber-hero-quote p{font-size:13px;line-height:1.7;opacity:.85;}
@@ -465,7 +465,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .cyber-quote blockquote{font-family:'Lora',serif;font-size:20px;font-style:italic;color:var(--dark);line-height:1.5;margin-bottom:10px;}
 .cyber-quote cite{font-size:11px;color:var(--text-light);text-transform:uppercase;letter-spacing:1px;}
 
-/* ── SECURITY ── */
+/* SECURITY */
 .security-hero{display:grid;grid-template-columns:1fr auto;gap:28px;margin-bottom:36px;align-items:center;}
 .shield-graphic{width:140px;height:140px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);display:flex;align-items:center;justify-content:center;font-size:64px;}
 .security-section{margin-bottom:36px;}
@@ -475,7 +475,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .twofa-explain h4{font-size:16px;font-weight:700;color:var(--dark);margin-bottom:8px;}
 .twofa-explain p{font-size:13px;color:var(--text-mid);line-height:1.6;margin-bottom:14px;}
 .check-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);margin-bottom:7px;}
-.check-item::before{content:'✅';font-size:13px;}
+.check-item::before{content:'';font-size:13px;}
 .twofa-stats{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);padding:26px;display:grid;grid-template-columns:1fr 1fr;gap:18px;}
 .stat-block h4{font-family:'DM Mono',monospace;font-size:26px;font-weight:700;color:var(--teal);margin-bottom:3px;}
 .stat-block .stat-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-light);margin-bottom:5px;}
@@ -502,7 +502,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .email-step p{font-size:12px;color:var(--text-mid);line-height:1.5;}
 .email-btns{display:flex;gap:12px;}
 
-/* ── NCERT ── */
+/* NCERT */
 .ncert-box{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:28px;margin-bottom:32px;}
 .ncert-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:16px;flex-wrap:wrap;}
 .grade-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
@@ -525,7 +525,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .nbr-title{flex:1;}
 .nbr-arr{font-size:11px;color:var(--text-light);flex-shrink:0;}
 
-/* ── RESOURCES ── */
+/* RESOURCES */
 .resources-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:36px;}
 .res-card{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:22px;transition:all .2s;cursor:pointer;text-decoration:none;color:inherit;display:block;}
 .res-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-2px);border-color:var(--teal-mid);}
@@ -533,7 +533,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .res-card h3{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:5px;}
 .res-card p{font-size:12px;color:var(--text-mid);line-height:1.5;}
 
-/* ── SETTINGS ── */
+/* SETTINGS */
 .settings-section{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:26px;margin-bottom:20px;}
 .settings-section h3{font-family:'Lora',serif;font-size:17px;font-weight:700;color:var(--dark);margin-bottom:18px;}
 .setting-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);}
@@ -544,7 +544,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .toggle::after{content:'';width:17px;height:17px;background:#fff;border-radius:50%;position:absolute;top:3px;right:3px;transition:right .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
 .toggle.off{background:var(--border);} .toggle.off::after{right:22px;}
 
-/* ── ACCOUNT ── */
+/* ACCOUNT */
 .account-hero{background:linear-gradient(135deg,var(--dark-teal),#2a5050);border-radius:var(--rl);padding:36px;color:#fff;display:flex;align-items:center;gap:28px;margin-bottom:28px;position:relative;overflow:hidden;}
 .account-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.04);}
 .acc-avatar-lg{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:#fff;flex-shrink:0;border:3px solid rgba(255,255,255,.3);}
@@ -563,7 +563,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .logout-section h4{font-size:14px;font-weight:700;color:var(--red);margin-bottom:3px;}
 .logout-section p{font-size:12px;color:#9a4040;}
 
-/* ── FOOTER ── */
+/* FOOTER */
 footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:18px 36px;display:flex;justify-content:space-between;align-items:center;}
 .footer-copy{font-size:12px;color:var(--text-light);}
 .footer-links{display:flex;gap:18px;}
@@ -573,356 +573,358 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
 </head>
 <body>
 
-<!-- ══════════ LOGIN ══════════ -->
+<!-- LOGIN -->
 <div id="loginScreen">
-  <div class="login-card">
-    <div class="login-top">
-      <div class="login-logo">🎓</div>
-      <div class="login-brand">TrustED</div>
-      <div class="login-school">Lotus Valley International School, Gurugram<br>Staff Portal · AI Tools &amp; Security Hub</div>
-      <div class="testing-badge">⚠️ TESTING MODE — Any Gmail works</div>
-    </div>
-    <hr class="login-divider">
-    <div class="login-form-title">Sign in with Google</div>
-    <div class="login-form-sub">Use your school Google account.<br>In production, only <strong>@lotusvalleygurgaon.com</strong> accounts will be allowed.</div>
+ <div class="login-card">
+ <div class="login-top">
+ <div class="login-logo"></div>
+ <div class="login-brand">TrustED</div>
+ <div class="login-school">Lotus Valley International School, Gurugram<br>Staff Portal · AI Tools &amp; Security Hub</div>
+ <div class="testing-badge">TESTING MODE — Any Gmail works</div>
+ </div>
+ <hr class="login-divider">
+ <div class="login-form-title">Sign in with Google</div>
+ <div class="login-form-sub">Use your school Google account.<br>In production, only <strong>@lotusvalleygurgaon.com</strong>accounts will be allowed.</div>
 
-    <!-- Google Identity Services -->
-    <div id="g_id_onload"
-         data-client_id="494444176354-m3jlfvmkjom40pqetnm7e482vvtmo3jk.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse"
-         data-auto_prompt="false"
-         data-itp_support="true"
-         data-cancel_on_tap_outside="true">
-    </div>
-    <div class="google-btn-wrap">
-      <div class="g_id_signin"
-           data-type="standard"
-           data-size="large"
-           data-theme="outline"
-           data-text="sign_in_with"
-           data-shape="rectangular"
-           data-logo_alignment="left"
-           data-width="340">
-      </div>
-    </div>
+ <!-- Google Identity Services -->
+ <div id="g_id_onload"
+ data-client_id="494444176354-m3jlfvmkjom40pqetnm7e482vvtmo3jk.apps.googleusercontent.com"
+ data-callback="handleCredentialResponse"
+ data-auto_prompt="false"
+ data-itp_support="true"
+ data-cancel_on_tap_outside="true">
+ </div>
+ <div class="google-btn-wrap">
+ <div class="g_id_signin"
+ data-type="standard"
+ data-size="large"
+ data-theme="outline"
+ data-text="sign_in_with"
+ data-shape="rectangular"
+ data-logo_alignment="left"
+ data-width="340">
+ </div>
+ </div>
 
-    <div id="loginError"></div>
-    <div class="login-footer-note">🔒 Free for all Lotus Valley staff · No password required · No data stored</div>
-  </div>
+ <div id="loginError"></div>
+ <div class="login-footer-note">Free for all Lotus Valley staff · No password required · No data stored</div>
+ </div>
 </div>
 
-<!-- ══════════ APP SHELL ══════════ -->
+<!-- APP SHELL -->
 <div id="appShell">
-  <aside class="sidebar">
-    <div class="sidebar-logo">
-      <div class="brand">TrustED</div>
-      <div class="tagline">Lotus Valley International School<br>Gurugram</div>
-    </div>
-    <nav>
-      <a class="nav-item active"  onclick="switchPage('dashboard',this)"><span class="nav-icon">🏠</span> Dashboard</a>
-      <a class="nav-item"         onclick="switchPage('aitoolbox',this)"><span class="nav-icon">✦</span>  AI Tools</a>
-      <a class="nav-item"         onclick="switchPage('security',this)"> <span class="nav-icon">🔒</span> Security</a>
-      <a class="nav-item"         onclick="switchPage('cyber',this)">    <span class="nav-icon">🛡️</span> Cyber Tips</a>
-      <a class="nav-item"         onclick="switchPage('resources',this)"><span class="nav-icon">📚</span> Resources</a>
-      <a class="nav-item"         onclick="switchPage('settings',this)"> <span class="nav-icon">⚙️</span> Settings</a>
-      <a class="nav-item"         onclick="switchPage('account',this)">  <span class="nav-icon">👤</span> My Account</a>
-    </nav>
-    <div class="sidebar-footer" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])">
-      <div class="avatar" id="sbInitials">?</div>
-      <div><div class="su-name" id="sbName">—</div><div class="su-role" id="sbEmail">—</div></div>
-    </div>
-  </aside>
+ <aside class="sidebar">
+ <div class="sidebar-logo">
+ <div class="brand">TrustED</div>
+ <div class="tagline">Lotus Valley International School<br>Gurugram</div>
+ </div>
+ <nav>
+ <a class="nav-item active" onclick="switchPage('dashboard',this)">Dashboard</a>
+ <a class="nav-item" onclick="switchPage('aitoolbox',this)">AI Tools</a>
+ <a class="nav-item" onclick="switchPage('security',this)">Security</a>
+ <a class="nav-item" onclick="switchPage('cyber',this)">Cyber Tips</a>
+ <a class="nav-item" onclick="switchPage('resources',this)">Resources</a>
+ <a class="nav-item" onclick="switchPage('settings',this)">Settings</a>
+ <a class="nav-item" onclick="switchPage('account',this)">My Account</a>
+ </nav>
+ <div class="sidebar-footer" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])">
+ <div class="avatar" id="sbInitials">?</div>
+ <div><div class="su-name" id="sbName">—</div><div class="su-role" id="sbEmail">—</div></div>
+ </div>
+ </aside>
 
-  <div class="main">
-    <header class="topbar">
-      <div class="topbar-title">TrustED</div>
-      <div class="search-box">
-        <span>🔍</span>
-        <input type="text" id="searchInput" placeholder="Search resources…" onkeydown="handleSearch(event)">
-      </div>
-      <div class="topbar-actions">
-        <div class="icon-btn">🔔</div>
-        <div class="icon-btn" onclick="switchPage('resources',document.querySelectorAll('.nav-item')[4])">❓</div>
-        <div class="icon-btn" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])">👤</div>
-      </div>
-    </header>
+ <div class="main">
+ <header class="topbar">
+ <div class="topbar-title">TrustED</div>
+ <div class="search-box">
+ 
+ <input type="text" id="searchInput" placeholder="Search resources…" onkeydown="handleSearch(event)">
+ </div>
+ <div class="topbar-actions">
+ <div class="icon-btn"></div>
+ <div class="icon-btn" onclick="switchPage('resources',document.querySelectorAll('.nav-item')[4])"></div>
+ <div class="icon-btn" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])"></div>
+ </div>
+ </header>
 
-    <div class="content">
+ <div class="content">
 
-    <!-- DASHBOARD -->
-    <div class="page active" id="page-dashboard">
-      <div class="hero-row">
-        <div>
-          <div class="eyebrow">Lotus Valley International School, Gurugram</div>
-          <h1 class="welcome-title">Welcome back,<br><em id="dashName">Professor.</em></h1>
-          <p class="welcome-sub">Your digital classroom is secured. Today is a perfect day to explore new AI pedagogical tools and verify research integrity.</p>
-        </div>
-        <div class="integrity-card">
-          <span class="integrity-icon">🛡️</span>
-          <span class="secure-badge">Secure Session</span>
-          <div class="integrity-pct">System Integrity: 100%</div>
-          <div class="integrity-sub">All educator protocols are active.</div>
-        </div>
-      </div>
-      <div class="section-header">
-        <div><div class="section-title">Curated AI Tools</div><div class="section-sub">Selected for academic rigor and efficiency.</div></div>
-        <a class="view-all" onclick="switchPage('aitoolbox',document.querySelectorAll('.nav-item')[1])">View Full Directory →</a>
-      </div>
-      <div class="tools-grid">
-        <div class="tool-card"><div class="tool-icon teal">📊</div><h3>Gamma</h3><p>AI-powered presentations and document creation that respects scholarly formats.</p><div class="tags"><span class="tag">Visual Design</span><span class="tag">Slide Deck</span></div><a href="https://gamma.app" target="_blank" class="btn btn-primary btn-full">Open Gamma ↗</a></div>
-        <div class="tool-card"><div class="tool-icon green">🔍</div><h3>AI Checkers</h3><p>Detect AI-generated text in student submissions using industry-leading tools.</p><div class="tags"><span class="tag">Integrity</span><span class="tag">Detection</span></div><a href="https://gptzero.me" target="_blank" class="btn btn-outline btn-full">Open GPTZero ↗</a></div>
-        <div class="tool-card"><div class="tool-icon warm">✏️</div><h3>Paraphrasers</h3><p>Refine academic tone and clarity for complex research papers with QuillBot.</p><div class="tags"><span class="tag">Writing</span><span class="tag">Academic</span></div><a href="https://quillbot.com" target="_blank" class="btn btn-outline btn-full">Open QuillBot ↗</a></div>
-      </div>
-      <div class="dashboard-bottom">
-        <div class="auth-hub">
-          <div class="auth-hub-header"><div class="auth-icon">🔑</div><div><h3>Authentication Hub</h3><p>Your session is secured. <a class="inline-link" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2])">View Security Guide →</a></p></div></div>
-          <div class="auth-methods">
-            <div class="auth-method"><span style="font-size:22px;">✉️</span><div><div class="auth-method-name">School Email Verified</div><div class="auth-method-meta">@lotusvalleygurgaon.com</div></div><span class="check-green">✅</span></div>
-            <div class="auth-method"><span style="font-size:22px;">🏫</span><div><div class="auth-method-name">Domain Lock Active</div><div class="auth-method-meta">School staff only</div></div><span class="check-green">✅</span></div>
-          </div>
-        </div>
-        <div class="tip-card">
-          <div class="tip-eyebrow">💡 Tip of the Day</div>
-          <h3>The "Human Proxy" Trap</h3>
-          <p>Cybercriminals target educators by impersonating students in distress. Always verify unusual requests through official channels before acting.</p>
-          <a class="view-all" onclick="switchPage('cyber',document.querySelectorAll('.nav-item')[3])">Learn about Phishing →</a>
-        </div>
-      </div>
-    </div>
+ <!-- DASHBOARD -->
+ <div class="page active" id="page-dashboard">
+ <div class="hero-row">
+ <div>
+ <div class="eyebrow">Lotus Valley International School, Gurugram</div>
+ <h1 class="welcome-title">Welcome back,<br><em id="dashName">Professor.</em></h1>
+ <p class="welcome-sub">Your digital classroom is secured. Today is a perfect day to explore new AI pedagogical tools and verify research integrity.</p>
+ </div>
+ <div class="integrity-card">
+ 
+ <span class="secure-badge">Secure Session</span>
+ <div class="integrity-pct">System Integrity: 100%</div>
+ <div class="integrity-sub">All educator protocols are active.</div>
+ </div>
+ </div>
+ <div class="section-header">
+ <div><div class="section-title">Curated AI Tools</div><div class="section-sub">Selected for academic rigor and efficiency.</div></div>
+ <a class="view-all" onclick="switchPage('aitoolbox',document.querySelectorAll('.nav-item')[1])">View Full Directory →</a>
+ </div>
+ <div class="tools-grid">
+ <div class="tool-card"><div class="tool-icon teal"></div><h3>Gamma</h3><p>AI-powered presentations and document creation that respects scholarly formats.</p><div class="tags"><span class="tag">Visual Design</span><span class="tag">Slide Deck</span></div><a href="https://gamma.app" target="_blank" class="btn btn-primary btn-full">Open Gamma ↗</a></div>
+ <div class="tool-card"><div class="tool-icon green"></div><h3>AI Checkers</h3><p>Detect AI-generated text in student submissions using industry-leading tools.</p><div class="tags"><span class="tag">Integrity</span><span class="tag">Detection</span></div><a href="https://gptzero.me" target="_blank" class="btn btn-outline btn-full">Open GPTZero ↗</a></div>
+ <div class="tool-card"><div class="tool-icon warm"></div><h3>Paraphrasers</h3><p>Refine academic tone and clarity for complex research papers with QuillBot.</p><div class="tags"><span class="tag">Writing</span><span class="tag">Academic</span></div><a href="https://quillbot.com" target="_blank" class="btn btn-outline btn-full">Open QuillBot ↗</a></div>
+ </div>
+ <div class="dashboard-bottom">
+ <div class="auth-hub">
+ <div class="auth-hub-header"><div class="auth-icon"></div><div><h3>Authentication Hub</h3><p>Your session is secured. <a class="inline-link" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2])">View Security Guide →</a></p></div></div>
+ <div class="auth-methods">
+ <div class="auth-method"><div><div class="auth-method-name">School Email Verified</div><div class="auth-method-meta">@lotusvalleygurgaon.com</div></div></div>
+ <div class="auth-method"><div><div class="auth-method-name">Domain Lock Active</div><div class="auth-method-meta">School staff only</div></div></div>
+ </div>
+ </div>
+ <div class="tip-card">
+ <div class="tip-eyebrow">Tip of the Day</div>
+ <h3>The "Human Proxy" Trap</h3>
+ <p>Cybercriminals target educators by impersonating students in distress. Always verify unusual requests through official channels before acting.</p>
+ <a class="view-all" onclick="switchPage('cyber',document.querySelectorAll('.nav-item')[3])">Learn about Phishing →</a>
+ </div>
+ </div>
+ </div>
 
-    <!-- AI TOOLBOX -->
-    <div class="page" id="page-aitoolbox">
-      <div style="margin-bottom:30px;"><div class="eyebrow">Curated Resources</div><h1 class="page-title">AI Toolbox</h1><p class="page-desc">Ethical, effective AI tools vetted for the modern classroom.</p><div class="quick-tip">💡 <span><strong>Quick Tip:</strong> Always check AI-generated content for bias and accuracy before sharing with students.</span></div></div>
-      <div class="tools-section"><div class="tools-section-header"><div class="section-title">Presentation Tools</div><div class="tools-section-label">Visual Storytelling</div></div>
-        <div class="featured-tool"><div class="featured-thumb">📊<span class="featured-badge">Featured Tool</span></div><div><span class="top-rated">⭐ TOP RATED</span><h3>Gamma</h3><p>Create beautiful, engaging presentations from a simple prompt. No more deck formatting.</p><div class="featured-tool-btns"><a href="https://gamma.app" target="_blank" class="btn btn-primary">Open Gamma ↗</a><a href="https://gamma.app/docs" target="_blank" class="btn btn-outline">📖 Docs</a></div></div></div>
-        <div class="side-card"><div class="tool-icon teal" style="flex-shrink:0;">🎨</div><div style="flex:1;"><h3>Beautiful.ai</h3><p>Smart slides that automatically adapt to your content.</p><a href="https://www.beautiful.ai" target="_blank" class="explore-link">Open Beautiful.ai →</a></div></div>
-      </div>
-      <div class="tools-section"><div class="tools-section-header"><div><div class="eyebrow" style="margin-bottom:2px;">Academic Integrity</div><div class="section-title">AI Detection &amp; Verification</div></div></div>
-        <div class="verification-grid">
-          <div class="verify-card"><span class="verify-icon">🔴</span><h4>GPTZero</h4><p>Gold standard AI detection for large language model patterns.</p><a href="https://gptzero.me" target="_blank" class="view-details">OPEN GPTZERO ↗</a></div>
-          <div class="verify-card"><span class="verify-icon">👁️</span><h4>Originality.ai</h4><p>Enterprise-grade plagiarism and AI detector for academic verification.</p><a href="https://originality.ai" target="_blank" class="view-details">OPEN ORIGINALITY.AI ↗</a></div>
-          <div class="verify-card"><span class="verify-icon">🛡️</span><h4>Copyleaks</h4><p>Multilingual AI text detection across 30+ languages.</p><a href="https://copyleaks.com" target="_blank" class="view-details">OPEN COPYLEAKS ↗</a></div>
-        </div>
-      </div>
-      <div class="tools-section"><div class="tools-section-header"><div class="section-title">Writing Assistants</div><div class="tools-section-label">Enhanced Composition</div></div>
-        <div class="writing-grid">
-          <div class="writing-card"><span class="writing-card-label">REWRITE</span><span class="writing-card-icon">✏️</span><h3>QuillBot</h3><p>Paraphrasing tool to rewrite sentences, improve fluency, and adjust academic tone.</p><div class="tags" style="margin-bottom:14px;"><span class="tag">Paraphraser</span><span class="tag">Summarizer</span><span class="tag">Co-Writer</span></div><a href="https://quillbot.com" target="_blank" class="btn btn-primary btn-full">Open QuillBot ↗</a></div>
-          <div class="writing-card"><span class="writing-card-label">POLISH</span><span class="writing-card-icon">📝</span><h3>Grammarly</h3><p>AI suggestions to improve style, tone, and clarity in academic papers.</p><div class="tags" style="margin-bottom:14px;"><span class="tag">Grammar Check</span><span class="tag">Tone Detection</span><span class="tag">Citations</span></div><a href="https://www.grammarly.com" target="_blank" class="btn btn-primary btn-full">Open Grammarly ↗</a></div>
-        </div>
-      </div>
-      <div class="tools-section"><div class="tools-section-header"><div class="section-title">More Tools</div></div>
-        <div class="verification-grid">
-          <div class="verify-card"><span class="verify-icon">🤖</span><h4>ChatGPT</h4><p>General-purpose AI for lesson planning and drafting content.</p><a href="https://chat.openai.com" target="_blank" class="view-details">OPEN CHATGPT ↗</a></div>
-          <div class="verify-card"><span class="verify-icon">📑</span><h4>Notion AI</h4><p>Organise notes and create lesson plans with built-in AI.</p><a href="https://www.notion.so" target="_blank" class="view-details">OPEN NOTION ↗</a></div>
-          <div class="verify-card"><span class="verify-icon">🎨</span><h4>Canva</h4><p>Design worksheets and classroom visuals using Canva's AI tools.</p><a href="https://www.canva.com" target="_blank" class="view-details">OPEN CANVA ↗</a></div>
-        </div>
-      </div>
-    </div>
+ <!-- AI TOOLBOX -->
+ <div class="page" id="page-aitoolbox">
+ <div style="margin-bottom:30px;"><div class="eyebrow">Curated Resources</div><h1 class="page-title">AI Toolbox</h1><p class="page-desc">Ethical, effective AI tools vetted for the modern classroom.</p><div class="quick-tip"> <span><strong>Quick Tip:</strong>Always check AI-generated content for bias and accuracy before sharing with students.</span></div></div>
+ <div class="tools-section"><div class="tools-section-header"><div class="section-title">Presentation Tools</div><div class="tools-section-label">Visual Storytelling</div></div>
+ <div class="featured-tool"><div class="featured-thumb"><span class="featured-badge">Featured Tool</span></div><div><span class="top-rated">TOP RATED</span><h3>Gamma</h3><p>Create beautiful, engaging presentations from a simple prompt. No more deck formatting.</p><div class="featured-tool-btns"><a href="https://gamma.app" target="_blank" class="btn btn-primary">Open Gamma ↗</a><a href="https://gamma.app/docs" target="_blank" class="btn btn-outline">Docs</a></div></div></div>
+ <div class="side-card"><div class="tool-icon teal" style="flex-shrink:0;"></div><div style="flex:1;"><h3>Beautiful.ai</h3><p>Smart slides that automatically adapt to your content.</p><a href="https://www.beautiful.ai" target="_blank" class="explore-link">Open Beautiful.ai →</a></div></div>
+ </div>
+ <div class="tools-section"><div class="tools-section-header"><div><div class="eyebrow" style="margin-bottom:2px;">Academic Integrity</div><div class="section-title">AI Detection &amp; Verification</div></div></div>
+ <div class="verification-grid">
+ <div class="verify-card"><h4>GPTZero</h4><p>Gold standard AI detection for large language model patterns.</p><a href="https://gptzero.me" target="_blank" class="view-details">OPEN GPTZERO ↗</a></div>
+ <div class="verify-card"><h4>Originality.ai</h4><p>Enterprise-grade plagiarism and AI detector for academic verification.</p><a href="https://originality.ai" target="_blank" class="view-details">OPEN ORIGINALITY.AI ↗</a></div>
+ <div class="verify-card"><h4>Copyleaks</h4><p>Multilingual AI text detection across 30+ languages.</p><a href="https://copyleaks.com" target="_blank" class="view-details">OPEN COPYLEAKS ↗</a></div>
+ </div>
+ </div>
+ <div class="tools-section"><div class="tools-section-header"><div class="section-title">Writing Assistants</div><div class="tools-section-label">Enhanced Composition</div></div>
+ <div class="writing-grid">
+ <div class="writing-card"><span class="writing-card-label">REWRITE</span><h3>QuillBot</h3><p>Paraphrasing tool to rewrite sentences, improve fluency, and adjust academic tone.</p><div class="tags" style="margin-bottom:14px;"><span class="tag">Paraphraser</span><span class="tag">Summarizer</span><span class="tag">Co-Writer</span></div><a href="https://quillbot.com" target="_blank" class="btn btn-primary btn-full">Open QuillBot ↗</a></div>
+ <div class="writing-card"><span class="writing-card-label">POLISH</span><h3>Grammarly</h3><p>AI suggestions to improve style, tone, and clarity in academic papers.</p><div class="tags" style="margin-bottom:14px;"><span class="tag">Grammar Check</span><span class="tag">Tone Detection</span><span class="tag">Citations</span></div><a href="https://www.grammarly.com" target="_blank" class="btn btn-primary btn-full">Open Grammarly ↗</a></div>
+ </div>
+ </div>
+ <div class="tools-section"><div class="tools-section-header"><div class="section-title">More Tools</div></div>
+ <div class="verification-grid">
+ <div class="verify-card"><h4>ChatGPT</h4><p>General-purpose AI for lesson planning and drafting content.</p><a href="https://chat.openai.com" target="_blank" class="view-details">OPEN CHATGPT ↗</a></div>
+ <div class="verify-card"><h4>Notion AI</h4><p>Organise notes and create lesson plans with built-in AI.</p><a href="https://www.notion.so" target="_blank" class="view-details">OPEN NOTION ↗</a></div>
+ <div class="verify-card"><h4>Canva</h4><p>Design worksheets and classroom visuals using Canva's AI tools.</p><a href="https://www.canva.com" target="_blank" class="view-details">OPEN CANVA ↗</a></div>
+ <div class="verify-card"><h4>Duck.ai</h4><p>Privacy-focused AI by DuckDuckGo. No tracking, no data stored — safe for school use.</p><a href="https://duck.ai" target="_blank" class="view-details">OPEN DUCK.AI ↗</a></div>
+ <div class="verify-card"><h4>Claude (Anthropic)</h4><p>Advanced AI assistant for research, writing, analysis and lesson preparation.</p><a href="https://claude.ai" target="_blank" class="view-details">OPEN CLAUDE ↗</a></div>
+ <div class="verify-card"><h4>Gemini (Google)</h4><p>Google's AI assistant — great for research, summarising content and classroom ideas.</p><a href="https://gemini.google.com" target="_blank" class="view-details">OPEN GEMINI ↗</a></div>
+ </div>
+ </div>
+ </div>
 
-    <!-- CYBER TIPS -->
-    <div class="page" id="page-cyber">
-      <div class="eyebrow">Guardian of the Digital Domain</div>
-      <div class="cyber-hero"><h1 class="page-title">Cybersecurity Field Guide<br>for Modern Educators</h1><div class="cyber-hero-quote"><p>Practical, quiet advice to keep your classroom resilient and your students protected in the digital age.</p></div></div>
-      <div class="classroom-card">
-        <div><div class="section-badge">SECTION 01</div><h3>Classroom Safety</h3><p>Establishing physical and digital boundaries within the learning environment.</p>
-          <div class="classroom-tip"><span class="classroom-tip-icon">🔒</span><div><div class="classroom-tip-title">Screen Lock Discipline</div><div class="classroom-tip-desc">Always Windows+L or Cmd+Ctrl+Q when leaving the desk.</div></div></div>
-          <div class="classroom-tip"><span class="classroom-tip-icon">📡</span><div><div class="classroom-tip-title">Projection Protocol</div><div class="classroom-tip-desc">Freeze the screen before searching for student records.</div></div></div>
-        </div>
-        <div class="data-protect"><span style="font-size:26px;margin-bottom:10px;display:block;">🔏</span><h4>Student Data Protection</h4><p>The privacy of your students is a legal and moral imperative.</p>
-          <div class="protect-item"><div class="protect-num">01</div><span>Minimize PII in gradebooks.</span></div>
-          <div class="protect-item"><div class="protect-num">02</div><span>Audit shared Google Drive links every semester.</span></div>
-          <div class="protect-item"><div class="protect-num">03</div><span>Use school-approved communication apps exclusively.</span></div>
-          <a href="https://studentprivacy.ed.gov/ferpa" target="_blank" class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);margin-top:14px;width:100%;font-size:12px;">FERPA Compliance Guide ↗</a>
-        </div>
-      </div>
-      <div class="phishing-section">
-        <div class="phishing-grid">
-          <div class="phishing-main"><div class="critical-label">⚠️ Critical Skill</div><h3>Avoiding Phishing in Schools</h3><p>Education is the #1 target for credential harvesting.</p><div class="threat-box"><div class="threat-label">🚨 Recent Threat</div><p>Fake "IT Admin" emails requesting password updates for LMS accounts are on the rise.</p></div></div>
-          <div class="phishing-tips">
-            <div class="phishing-tip-card"><h5>🔎 Verify the Sender</h5><p>Hover over the sender name to reveal the real email address.</p></div>
-            <div class="phishing-tip-card"><h5>🖱️ Hover Before Clicking</h5><p>Check the true destination URL in the bottom of your browser.</p></div>
-            <div class="phishing-tip-card"><h5>⏰ Urgency is a Red Flag</h5><p>Phishers use "Immediate Action Required" lines to induce panic.</p></div>
-            <div class="phishing-tip-card"><h5>📧 Reporting Protocol</h5><p>Use the "Report Phishing" button to alert the security team.</p></div>
-          </div>
-        </div>
-      </div>
-      <div class="resources-strip">
-        <a href="https://staysafeonline.org/resources/" target="_blank" class="resource-item"><span style="font-size:20px;">⬇️</span><div><div class="resource-item-title">Safety Poster PDF</div><div class="resource-item-meta">Printable for staff rooms.</div></div></a>
-        <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="resource-item"><span style="font-size:20px;">🛡️</span><div><div class="resource-item-title">2FA Setup Guide</div><div class="resource-item-meta">Secure your school accounts.</div></div></a>
-        <a href="https://www.ncsa.org/home" target="_blank" class="resource-item"><span style="font-size:20px;">📄</span><div><div class="resource-item-title">Acceptable Use Policy</div><div class="resource-item-meta">Updated for 2024 standards.</div></div></a>
-      </div>
-      <div class="cyber-quote"><blockquote>"The most sophisticated firewall in education is a vigilant, well-informed teacher."</blockquote><cite>TrustED Security Collective • 2024</cite></div>
-    </div>
+ <!-- CYBER TIPS -->
+ <div class="page" id="page-cyber">
+ <div class="eyebrow">Guardian of the Digital Domain</div>
+ <div class="cyber-hero"><h1 class="page-title">Cybersecurity Field Guide<br>for Modern Educators</h1><div class="cyber-hero-quote"><p>Practical, quiet advice to keep your classroom resilient and your students protected in the digital age.</p></div></div>
+ <div class="classroom-card">
+ <div><div class="section-badge">SECTION 01</div><h3>Classroom Safety</h3><p>Establishing physical and digital boundaries within the learning environment.</p>
+ <div class="classroom-tip"><div><div class="classroom-tip-title">Screen Lock Discipline</div><div class="classroom-tip-desc">Always Windows+L or Cmd+Ctrl+Q when leaving the desk.</div></div></div>
+ <div class="classroom-tip"><div><div class="classroom-tip-title">Projection Protocol</div><div class="classroom-tip-desc">Freeze the screen before searching for student records.</div></div></div>
+ </div>
+ <div class="data-protect"><h4>Student Data Protection</h4><p>The privacy of your students is a legal and moral imperative.</p>
+ <div class="protect-item"><div class="protect-num">01</div><span>Minimize PII in gradebooks.</span></div>
+ <div class="protect-item"><div class="protect-num">02</div><span>Audit shared Google Drive links every semester.</span></div>
+ <div class="protect-item"><div class="protect-num">03</div><span>Use school-approved communication apps exclusively.</span></div>
+ <a href="https://studentprivacy.ed.gov/ferpa" target="_blank" class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);margin-top:14px;width:100%;font-size:12px;">FERPA Compliance Guide ↗</a>
+ </div>
+ </div>
+ <div class="phishing-section">
+ <div class="phishing-grid">
+ <div class="phishing-main"><div class="critical-label">Critical Skill</div><h3>Avoiding Phishing in Schools</h3><p>Education is the #1 target for credential harvesting.</p><div class="threat-box"><div class="threat-label">Recent Threat</div><p>Fake "IT Admin" emails requesting password updates for LMS accounts are on the rise.</p></div></div>
+ <div class="phishing-tips">
+ <div class="phishing-tip-card"><h5>Verify the Sender</h5><p>Hover over the sender name to reveal the real email address.</p></div>
+ <div class="phishing-tip-card"><h5>Hover Before Clicking</h5><p>Check the true destination URL in the bottom of your browser.</p></div>
+ <div class="phishing-tip-card"><h5>⏰ Urgency is a Red Flag</h5><p>Phishers use "Immediate Action Required" lines to induce panic.</p></div>
+ <div class="phishing-tip-card"><h5>Reporting Protocol</h5><p>Use the "Report Phishing" button to alert the security team.</p></div>
+ </div>
+ </div>
+ </div>
+ <div class="resources-strip">
+ <a href="https://staysafeonline.org/resources/" target="_blank" class="resource-item"><div><div class="resource-item-title">Safety Poster PDF</div><div class="resource-item-meta">Printable for staff rooms.</div></div></a>
+ <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="resource-item"><div><div class="resource-item-title">2FA Setup Guide</div><div class="resource-item-meta">Secure your school accounts.</div></div></a>
+ <a href="https://www.ncsa.org/home" target="_blank" class="resource-item"><div><div class="resource-item-title">Acceptable Use Policy</div><div class="resource-item-meta">Updated for 2024 standards.</div></div></a>
+ </div>
+ <div class="cyber-quote"><blockquote>"The most sophisticated firewall in education is a vigilant, well-informed teacher."</blockquote><cite>TrustED Security Collective • 2024</cite></div>
+ </div>
 
-    <!-- SECURITY -->
-    <div class="page" id="page-security">
-      <div class="eyebrow">Educator Safety Guide</div>
-      <div class="security-hero"><div><h1 class="page-title">Your Digital Sanctuary:<br>Security Hub</h1><p class="page-desc">Protecting your academic research and student data doesn't have to be complex.</p></div><div class="shield-graphic">🛡️</div></div>
-      <div class="security-section"><div class="section-num">1. The 2FA Foundation</div>
-        <div class="twofa-grid">
-          <div class="twofa-explain"><h4>What is 2FA?</h4><p>Think of it as a double-locked door. Even if someone finds your password, they still need a special token to enter.</p><div class="check-item">Something you know (Password)</div><div class="check-item">Something you have (Authenticator App)</div></div>
-          <div class="twofa-stats"><div class="stat-block"><div class="stat-label">Attacks Blocked</div><h4>99.9%</h4><p>2FA stops almost all automated account takeovers.</p></div><div class="stat-block"><div class="stat-label">Compliance</div><div class="ferpa-label">FERPA</div><p>Protecting student privacy is a legal requirement.</p></div></div>
-        </div>
-      </div>
-      <div class="security-section"><div class="section-num">2. Recommended Authenticators</div>
-        <div class="auth-apps">
-          <div class="auth-app-card"><span class="app-badge badge-easy">EASIEST</span><div class="app-logo g">🟢</div><h4>Google Authenticator</h4><p>Minimalist, works offline, syncs to your Google Account.</p><a href="https://support.google.com/accounts/answer/1066447" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
-          <div class="auth-app-card"><span class="app-badge badge-inst">INSTITUTIONAL</span><div class="app-logo m">🔵</div><h4>Microsoft Authenticator</h4><p>Best for Office 365. One-tap "Approve" notifications.</p><a href="https://www.microsoft.com/en-us/security/mobile-authenticator-app" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
-          <div class="auth-app-card"><span class="app-badge badge-multi">MULTI-DEVICE</span><div class="app-logo a">🔴</div><h4>Authy by Twilio</h4><p>Encrypted backups across Laptop, Tablet, and Phone.</p><a href="https://authy.com/download/" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
-        </div>
-      </div>
-      <div class="email-secure"><span class="email-icon-bg">✉️</span>
-        <h3>3. How to Secure Your Email</h3><p>Email is the primary target for educational phishing.</p>
-        <div class="email-steps">
-          <div class="email-step"><div class="step-num">01</div><div><h5>Check "Third-Party Apps"</h5><p>Revoke permissions in your <a href="https://myaccount.google.com/permissions" target="_blank" class="inline-link">Google Account</a> or <a href="https://account.microsoft.com/privacy/app-access" target="_blank" class="inline-link">Microsoft Account</a>.</p></div></div>
-          <div class="email-step"><div class="step-num">02</div><div><h5>Enable Phishing Protection</h5><p>Ensure "Safe Links" and "Safe Attachments" are enabled if your institution provides them.</p></div></div>
-          <div class="email-step"><div class="step-num">03</div><div><h5>The "hover" test</h5><p>Never click a link without hovering first to verify the true destination URL.</p></div></div>
-        </div>
-        <div class="email-btns"><a href="https://myaccount.google.com/security" target="_blank" class="btn btn-primary">Audit Google Account ↗</a><a href="https://account.microsoft.com/security" target="_blank" class="btn btn-outline">Audit Microsoft Account ↗</a></div>
-      </div>
-    </div>
+ <!-- SECURITY -->
+ <div class="page" id="page-security">
+ <div class="eyebrow">Educator Safety Guide</div>
+ <div class="security-hero"><div><h1 class="page-title">Your Digital Sanctuary:<br>Security Hub</h1><p class="page-desc">Protecting your academic research and student data doesn't have to be complex.</p></div><div class="shield-graphic"></div></div>
+ <div class="security-section"><div class="section-num">1. The 2FA Foundation</div>
+ <div class="twofa-grid">
+ <div class="twofa-explain"><h4>What is 2FA?</h4><p>Think of it as a double-locked door. Even if someone finds your password, they still need a special token to enter.</p><div class="check-item">Something you know (Password)</div><div class="check-item">Something you have (Authenticator App)</div></div>
+ <div class="twofa-stats"><div class="stat-block"><div class="stat-label">Attacks Blocked</div><h4>99.9%</h4><p>2FA stops almost all automated account takeovers.</p></div><div class="stat-block"><div class="stat-label">Compliance</div><div class="ferpa-label">FERPA</div><p>Protecting student privacy is a legal requirement.</p></div></div>
+ </div>
+ </div>
+ <div class="security-section"><div class="section-num">2. Recommended Authenticators</div>
+ <div class="auth-apps">
+ <div class="auth-app-card"><span class="app-badge badge-easy">EASIEST</span><div class="app-logo g"></div><h4>Google Authenticator</h4><p>Minimalist, works offline, syncs to your Google Account.</p><a href="https://support.google.com/accounts/answer/1066447" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
+ <div class="auth-app-card"><span class="app-badge badge-inst">INSTITUTIONAL</span><div class="app-logo m"></div><h4>Microsoft Authenticator</h4><p>Best for Office 365. One-tap "Approve" notifications.</p><a href="https://www.microsoft.com/en-us/security/mobile-authenticator-app" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
+ <div class="auth-app-card"><span class="app-badge badge-multi">MULTI-DEVICE</span><div class="app-logo a"></div><h4>Authy by Twilio</h4><p>Encrypted backups across Laptop, Tablet, and Phone.</p><a href="https://authy.com/download/" target="_blank" class="btn btn-outline btn-full btn-sm">SETUP GUIDE ↗</a></div>
+ </div>
+ </div>
+ <div class="email-secure">
+ <h3>3. How to Secure Your Email</h3><p>Email is the primary target for educational phishing.</p>
+ <div class="email-steps">
+ <div class="email-step"><div class="step-num">01</div><div><h5>Check "Third-Party Apps"</h5><p>Revoke permissions in your <a href="https://myaccount.google.com/permissions" target="_blank" class="inline-link">Google Account</a>or <a href="https://account.microsoft.com/privacy/app-access" target="_blank" class="inline-link">Microsoft Account</a>.</p></div></div>
+ <div class="email-step"><div class="step-num">02</div><div><h5>Enable Phishing Protection</h5><p>Ensure "Safe Links" and "Safe Attachments" are enabled if your institution provides them.</p></div></div>
+ <div class="email-step"><div class="step-num">03</div><div><h5>The "hover" test</h5><p>Never click a link without hovering first to verify the true destination URL.</p></div></div>
+ </div>
+ <div class="email-btns"><a href="https://myaccount.google.com/security" target="_blank" class="btn btn-primary">Audit Google Account ↗</a><a href="https://account.microsoft.com/security" target="_blank" class="btn btn-outline">Audit Microsoft Account ↗</a></div>
+ </div>
+ </div>
 
-    <!-- RESOURCES -->
-    <div class="page" id="page-resources">
-      <div class="eyebrow">Learning Hub</div>
-      <h1 class="page-title" style="margin-bottom:6px;">Resources</h1>
-      <p class="page-desc" style="margin-bottom:28px;">NCERT textbooks by grade &amp; stream, plus official guides for educators.</p>
+ <!-- RESOURCES -->
+ <div class="page" id="page-resources">
+ <div class="eyebrow">Learning Hub</div>
+ <h1 class="page-title" style="margin-bottom:6px;">Resources</h1>
+ <p class="page-desc" style="margin-bottom:28px;">NCERT textbooks by grade &amp; stream, plus official guides for educators.</p>
 
-      <!-- NCERT SECTION -->
-      <div class="ncert-box">
-        <div class="ncert-top">
-          <div>
-            <div class="eyebrow" style="margin-bottom:4px;">Official Curriculum</div>
-            <div class="section-title">NCERT Textbooks</div>
-            <div class="section-sub">Select your grade — books open on the official NCERT website</div>
-          </div>
-          <a href="https://ncert.nic.in/textbook.php" target="_blank" class="btn btn-outline btn-sm">Browse NCERT ↗</a>
-        </div>
-        <div class="grade-tabs">
-          <button class="grade-tab active" onclick="selectGrade('9',this)">Class 9</button>
-          <button class="grade-tab"        onclick="selectGrade('10',this)">Class 10</button>
-          <button class="grade-tab"        onclick="selectGrade('11',this)">Class 11</button>
-          <button class="grade-tab"        onclick="selectGrade('12',this)">Class 12</button>
-        </div>
-        <div class="stream-tabs" id="streamTabs">
-          <button class="stream-tab active" onclick="selectStream('all',this)">📚 All Subjects</button>
-          <button class="stream-tab"        onclick="selectStream('science',this)">🔬 Science</button>
-          <button class="stream-tab"        onclick="selectStream('commerce',this)">💼 Commerce</button>
-          <button class="stream-tab"        onclick="selectStream('arts',this)">🎨 Arts / Humanities</button>
-        </div>
-        <div id="ncertGrid"></div>
-      </div>
+ <!-- NCERT SECTION -->
+ <div class="ncert-box">
+ <div class="ncert-top">
+ <div>
+ <div class="eyebrow" style="margin-bottom:4px;">Official Curriculum</div>
+ <div class="section-title">NCERT Textbooks</div>
+ <div class="section-sub">Select your grade — books open on the official NCERT website</div>
+ </div>
+ <a href="https://ncert.nic.in/textbook.php" target="_blank" class="btn btn-outline btn-sm">Browse NCERT ↗</a>
+ </div>
+ <div class="grade-tabs">
+ <button class="grade-tab active" onclick="selectGrade('9',this)">Class 9</button>
+ <button class="grade-tab" onclick="selectGrade('10',this)">Class 10</button>
+ <button class="grade-tab" onclick="selectGrade('11',this)">Class 11</button>
+ <button class="grade-tab" onclick="selectGrade('12',this)">Class 12</button>
+ </div>
+ <div class="stream-tabs" id="streamTabs">
+ <button class="stream-tab active" onclick="selectStream('all',this)">All Subjects</button>
+ <button class="stream-tab" onclick="selectStream('science',this)">Science</button>
+ <button class="stream-tab" onclick="selectStream('commerce',this)">Commerce</button>
+ <button class="stream-tab" onclick="selectStream('arts',this)">Arts / Humanities</button>
+ </div>
+ <div id="ncertGrid"></div>
+ </div>
 
-      <hr style="border:none;border-top:1px solid var(--border);margin:0 0 30px;">
+ <hr style="border:none;border-top:1px solid var(--border);margin:0 0 30px;">
 
-      <div class="section-title" style="margin-bottom:16px;">📂 General Resources</div>
-      <div class="resources-grid">
-        <a href="https://www.iste.org/areas-of-focus/ai-in-education" target="_blank" class="res-card"><span class="res-card-icon">📘</span><h3>AI in the Classroom (ISTE)</h3><p>Responsible integration of AI tools into teaching practice.</p></a>
-        <a href="https://www.turnitin.com/blog/academic-integrity-in-the-age-of-ai" target="_blank" class="res-card"><span class="res-card-icon">🗂️</span><h3>Academic Integrity in the Age of AI</h3><p>Turnitin's guide covering AI use policies and plagiarism rules.</p></a>
-        <a href="https://staysafeonline.org/resources/" target="_blank" class="res-card"><span class="res-card-icon">🔐</span><h3>Cybersecurity Starter Pack (NCSA)</h3><p>2FA setup, phishing checklist, and data protection tips.</p></a>
-        <a href="https://www.canva.com/education/" target="_blank" class="res-card"><span class="res-card-icon">📊</span><h3>Canva for Education (Free)</h3><p>Free templates, worksheets, and interactive classroom tools.</p></a>
-        <a href="https://aiforeducation.io" target="_blank" class="res-card"><span class="res-card-icon">🧠</span><h3>AI for Education (AI4E)</h3><p>Free lesson plans and assessments on AI literacy.</p></a>
-        <a href="https://studentprivacy.ed.gov/ferpa" target="_blank" class="res-card"><span class="res-card-icon">⚖️</span><h3>FERPA Compliance (US Dept. of Ed)</h3><p>Official guidance on meeting federal student privacy standards.</p></a>
-      </div>
+ <div class="section-title" style="margin-bottom:16px;">General Resources</div>
+ <div class="resources-grid">
+ <a href="https://www.iste.org/areas-of-focus/ai-in-education" target="_blank" class="res-card"><h3>AI in the Classroom (ISTE)</h3><p>Responsible integration of AI tools into teaching practice.</p></a>
+ <a href="https://www.turnitin.com/blog/academic-integrity-in-the-age-of-ai" target="_blank" class="res-card"><h3>Academic Integrity in the Age of AI</h3><p>Turnitin's guide covering AI use policies and plagiarism rules.</p></a>
+ <a href="https://staysafeonline.org/resources/" target="_blank" class="res-card"><h3>Cybersecurity Starter Pack (NCSA)</h3><p>2FA setup, phishing checklist, and data protection tips.</p></a>
+ <a href="https://www.canva.com/education/" target="_blank" class="res-card"><h3>Canva for Education (Free)</h3><p>Free templates, worksheets, and interactive classroom tools.</p></a>
+ <a href="https://aiforeducation.io" target="_blank" class="res-card"><h3>AI for Education (AI4E)</h3><p>Free lesson plans and assessments on AI literacy.</p></a>
+ <a href="https://studentprivacy.ed.gov/ferpa" target="_blank" class="res-card"><h3>FERPA Compliance (US Dept. of Ed)</h3><p>Official guidance on meeting federal student privacy standards.</p></a>
+ </div>
 
-      <div style="margin-bottom:28px;">
-        <div class="section-title" style="margin-bottom:14px;">⚡ Quick Launch</div>
-        <div class="pill-strip">
-          <a href="https://gamma.app" target="_blank" class="pill">📊 Gamma</a>
-          <a href="https://quillbot.com" target="_blank" class="pill">✏️ QuillBot</a>
-          <a href="https://www.grammarly.com" target="_blank" class="pill">📝 Grammarly</a>
-          <a href="https://gptzero.me" target="_blank" class="pill">🔍 GPTZero</a>
-          <a href="https://originality.ai" target="_blank" class="pill">👁️ Originality.ai</a>
-          <a href="https://copyleaks.com" target="_blank" class="pill">🛡️ Copyleaks</a>
-          <a href="https://www.canva.com" target="_blank" class="pill">🎨 Canva</a>
-          <a href="https://chat.openai.com" target="_blank" class="pill">🤖 ChatGPT</a>
-          <a href="https://www.notion.so" target="_blank" class="pill">📑 Notion</a>
-          <a href="https://www.beautiful.ai" target="_blank" class="pill">🖼️ Beautiful.ai</a>
-          <a href="https://ncert.nic.in/textbook.php" target="_blank" class="pill">📗 NCERT Books</a>
-          <a href="https://epathshala.nic.in/" target="_blank" class="pill">📱 e-Pathshala</a>
-        </div>
-      </div>
-    </div>
+ <div style="margin-bottom:28px;">
+ <div class="section-title" style="margin-bottom:14px;">Quick Launch</div>
+ <div class="pill-strip">
+ <a href="https://gamma.app" target="_blank" class="pill">Gamma</a>
+ <a href="https://quillbot.com" target="_blank" class="pill">QuillBot</a>
+ <a href="https://www.grammarly.com" target="_blank" class="pill">Grammarly</a>
+ <a href="https://gptzero.me" target="_blank" class="pill">GPTZero</a>
+ <a href="https://originality.ai" target="_blank" class="pill">Originality.ai</a>
+ <a href="https://copyleaks.com" target="_blank" class="pill">Copyleaks</a>
+ <a href="https://www.canva.com" target="_blank" class="pill">Canva</a>
+ <a href="https://chat.openai.com" target="_blank" class="pill">ChatGPT</a>
+ <a href="https://www.notion.so" target="_blank" class="pill">Notion</a>
+ <a href="https://www.beautiful.ai" target="_blank" class="pill">Beautiful.ai</a>
+ <a href="https://ncert.nic.in/textbook.php" target="_blank" class="pill">NCERT Books</a>
+ <a href="https://epathshala.nic.in/" target="_blank" class="pill">e-Pathshala</a>
+ </div>
+ </div>
+ </div>
 
-    <!-- SETTINGS -->
-    <div class="page" id="page-settings">
-      <div class="eyebrow">Preferences</div><h1 class="page-title" style="margin-bottom:26px;">Settings</h1>
-      <div class="settings-section"><h3>Notifications</h3>
-        <div class="setting-row"><div class="setting-info"><h4>Security Alerts</h4><p>Get notified of unusual login activity.</p></div><div class="toggle"></div></div>
-        <div class="setting-row"><div class="setting-info"><h4>Weekly Cyber Tip</h4><p>Receive a cybersecurity tip every Monday.</p></div><div class="toggle"></div></div>
-        <div class="setting-row"><div class="setting-info"><h4>Tool Updates</h4><p>Be notified when saved AI tools are updated.</p></div><div class="toggle off"></div></div>
-      </div>
-      <div class="settings-section"><h3>Privacy &amp; Security</h3>
-        <div class="setting-row"><div class="setting-info"><h4>Two-Factor Authentication</h4><p>Require 2FA every login. <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="inline-link">Set up →</a></p></div><div class="toggle"></div></div>
-        <div class="setting-row"><div class="setting-info"><h4>Session Timeout</h4><p>Auto log-out after 30 minutes of inactivity.</p></div><div class="toggle"></div></div>
-        <div class="setting-row"><div class="setting-info"><h4>Activity Log</h4><p>Keep a log of logins and document scans.</p></div><div class="toggle off"></div></div>
-      </div>
-      <div class="settings-section"><h3>⚡ Quick Launch</h3>
-        <div class="pill-strip" style="margin-top:4px;">
-          <a href="https://gamma.app" target="_blank" class="pill">📊 Gamma</a>
-          <a href="https://quillbot.com" target="_blank" class="pill">✏️ QuillBot</a>
-          <a href="https://www.grammarly.com" target="_blank" class="pill">📝 Grammarly</a>
-          <a href="https://gptzero.me" target="_blank" class="pill">🔍 GPTZero</a>
-          <a href="https://ncert.nic.in/textbook.php" target="_blank" class="pill">📗 NCERT Books</a>
-        </div>
-      </div>
-    </div>
+ <!-- SETTINGS -->
+ <div class="page" id="page-settings">
+ <div class="eyebrow">Preferences</div><h1 class="page-title" style="margin-bottom:26px;">Settings</h1>
+ <div class="settings-section"><h3>Notifications</h3>
+ <div class="setting-row"><div class="setting-info"><h4>Security Alerts</h4><p>Get notified of unusual login activity.</p></div><div class="toggle"></div></div>
+ <div class="setting-row"><div class="setting-info"><h4>Weekly Cyber Tip</h4><p>Receive a cybersecurity tip every Monday.</p></div><div class="toggle"></div></div>
+ <div class="setting-row"><div class="setting-info"><h4>Tool Updates</h4><p>Be notified when saved AI tools are updated.</p></div><div class="toggle off"></div></div>
+ </div>
+ <div class="settings-section"><h3>Privacy &amp; Security</h3>
+ <div class="setting-row"><div class="setting-info"><h4>Two-Factor Authentication</h4><p>Require 2FA every login. <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="inline-link">Set up →</a></p></div><div class="toggle"></div></div>
+ <div class="setting-row"><div class="setting-info"><h4>Session Timeout</h4><p>Auto log-out after 30 minutes of inactivity.</p></div><div class="toggle"></div></div>
+ <div class="setting-row"><div class="setting-info"><h4>Activity Log</h4><p>Keep a log of logins and document scans.</p></div><div class="toggle off"></div></div>
+ </div>
+ <div class="settings-section"><h3>Quick Launch</h3>
+ <div class="pill-strip" style="margin-top:4px;">
+ <a href="https://gamma.app" target="_blank" class="pill">Gamma</a>
+ <a href="https://quillbot.com" target="_blank" class="pill">QuillBot</a>
+ <a href="https://www.grammarly.com" target="_blank" class="pill">Grammarly</a>
+ <a href="https://gptzero.me" target="_blank" class="pill">GPTZero</a>
+ <a href="https://ncert.nic.in/textbook.php" target="_blank" class="pill">NCERT Books</a>
+ </div>
+ </div>
+ </div>
 
-    <!-- MY ACCOUNT -->
-    <div class="page" id="page-account">
-      <div class="eyebrow">My Profile</div><h1 class="page-title" style="margin-bottom:24px;">My Account</h1>
-      <div class="account-hero">
-        <div class="acc-avatar-lg" id="accInitials">?</div>
-        <div class="account-hero-info">
-          <h2 id="accName">—</h2>
-          <div class="acc-email-disp" id="accEmail">—</div>
-          <span class="acc-school-badge">🏫 Lotus Valley International School, Gurugram</span>
-        </div>
-      </div>
-      <div class="account-grid">
-        <div class="acc-card"><h3>Account Details</h3>
-          <div class="acc-row"><span class="acc-row-label">Full Name</span><span class="acc-row-value" id="accDName">—</span></div>
-          <div class="acc-row"><span class="acc-row-label">Email</span><span class="acc-row-value" id="accDEmail">—</span></div>
-          <div class="acc-row"><span class="acc-row-label">School</span><span class="acc-row-value">Lotus Valley International School, Gurugram</span></div>
-          <div class="acc-row"><span class="acc-row-label">Domain</span><span class="acc-row-value">@lotusvalleygurgaon.com</span></div>
-          <div class="acc-row"><span class="acc-row-label">Access Level</span><span class="acc-row-value">Teachers &amp; Admin Staff</span></div>
-        </div>
-        <div class="acc-card"><h3>Session &amp; Security</h3>
-          <div class="acc-row"><span class="acc-row-label">Sign-in Method</span><span class="acc-row-value">School Email Verified</span></div>
-          <div class="acc-row"><span class="acc-row-label">Domain Lock</span><span class="acc-status">✅ Active</span></div>
-          <div class="acc-row"><span class="acc-row-label">Plan</span><span class="acc-status">🎓 Free · School Staff</span></div>
-          <div class="acc-row"><span class="acc-row-label">Session</span><span class="acc-status">🟢 Secure</span></div>
-          <div class="acc-row"><span class="acc-row-label">Signed in at</span><span class="acc-row-value" id="accTime">—</span></div>
-        </div>
-      </div>
-      <div class="logout-section">
-        <div><h4>Sign Out of TrustED</h4><p>You'll be returned to the login screen. You can sign back in any time.</p></div>
-        <button class="btn btn-danger" onclick="signOut()">🚪 Sign Out</button>
-      </div>
-    </div>
+ <!-- MY ACCOUNT -->
+ <div class="page" id="page-account">
+ <div class="eyebrow">My Profile</div><h1 class="page-title" style="margin-bottom:24px;">My Account</h1>
+ <div class="account-hero">
+ <div class="acc-avatar-lg" id="accInitials">?</div>
+ <div class="account-hero-info">
+ <h2 id="accName">—</h2>
+ <div class="acc-email-disp" id="accEmail">—</div>
+ <span class="acc-school-badge">Lotus Valley International School, Gurugram</span>
+ </div>
+ </div>
+ <div class="account-grid">
+ <div class="acc-card"><h3>Account Details</h3>
+ <div class="acc-row"><span class="acc-row-label">Full Name</span><span class="acc-row-value" id="accDName">—</span></div>
+ <div class="acc-row"><span class="acc-row-label">Email</span><span class="acc-row-value" id="accDEmail">—</span></div>
+ <div class="acc-row"><span class="acc-row-label">School</span><span class="acc-row-value">Lotus Valley International School, Gurugram</span></div>
+ <div class="acc-row"><span class="acc-row-label">Domain</span><span class="acc-row-value">@lotusvalleygurgaon.com</span></div>
+ <div class="acc-row"><span class="acc-row-label">Access Level</span><span class="acc-row-value">Teachers &amp; Admin Staff</span></div>
+ </div>
+ <div class="acc-card"><h3>Session &amp; Security</h3>
+ <div class="acc-row"><span class="acc-row-label">Sign-in Method</span><span class="acc-row-value">School Email Verified</span></div>
+ <div class="acc-row"><span class="acc-row-label">Domain Lock</span><span class="acc-status">Active</span></div>
+ <div class="acc-row"><span class="acc-row-label">Plan</span><span class="acc-status">Free · School Staff</span></div>
+ <div class="acc-row"><span class="acc-row-label">Session</span><span class="acc-status">Secure</span></div>
+ <div class="acc-row"><span class="acc-row-label">Signed in at</span><span class="acc-row-value" id="accTime">—</span></div>
+ </div>
+ </div>
+ <div class="logout-section">
+ <div><h4>Sign Out of TrustED</h4><p>You'll be returned to the login screen. You can sign back in any time.</p></div>
+ <button class="btn btn-danger" onclick="signOut()">Sign Out</button>
+ </div>
+ </div>
 
-    </div><!-- /content -->
+ </div><!-- /content -->
 
-    <footer>
-      <div class="footer-copy">© 2024 TrustED · Lotus Valley International School, Gurugram · Free for all school staff</div>
-      <div class="footer-links">
-        <a class="footer-link" href="https://studentprivacy.ed.gov/ferpa" target="_blank">Privacy Policy</a>
-        <a class="footer-link" href="https://staysafeonline.org" target="_blank">Cyber Resources</a>
-        <a class="footer-link" href="/cdn-cgi/l/email-protection#b3c0c6c3c3dcc1c7f3dfdcc7c6c0c5d2dfdfd6cad4c6c1d4d2dcdd9dd0dcde">Contact Support</a>
-      </div>
-    </footer>
-  </div><!-- /main -->
+ <footer>
+ <div class="footer-copy">© 2024 TrustED · Lotus Valley International School, Gurugram · Free for all school staff</div>
+ <div class="footer-links">
+ <a class="footer-link" href="https://studentprivacy.ed.gov/ferpa" target="_blank">Privacy Policy</a>
+ <a class="footer-link" href="https://staysafeonline.org" target="_blank">Cyber Resources</a>
+ <a class="footer-link" href="/cdn-cgi/l/email-protection#b3c0c6c3c3dcc1c7f3dfdcc7c6c0c5d2dfdfd6cad4c6c1d4d2dcdd9dd0dcde">Contact Support</a>
+ </div>
+ </footer>
+ </div><!-- /main -->
 </div><!-- /appShell -->
 
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    var saved = sessionStorage.getItem("tu");
-    if (saved) { try { currentUser = JSON.parse(saved); launchApp(); } catch(e){} }
-    document.querySelectorAll(".toggle").forEach(function(t){
-      t.addEventListener("click", function(){ t.classList.toggle("off"); });
-    });
-    renderBooks();
-  });
+<script>document.addEventListener("DOMContentLoaded", function() {
+ var saved = sessionStorage.getItem("tu");
+ if (saved) { try { currentUser = JSON.parse(saved); launchApp(); } catch(e){} }
+ document.querySelectorAll(".toggle").forEach(function(t){
+ t.addEventListener("click", function(){ t.classList.toggle("off"); });
+ });
+ renderBooks();
+ });
 </script>
 </body>
 </html>
