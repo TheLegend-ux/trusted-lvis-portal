@@ -83,9 +83,12 @@ function launchApp() {
  document.getElementById('dashName').textContent = currentUser.name.split(' ')[0] + '.';
  var t = document.getElementById('accTime');
  if(t){ var d=new Date(); t.textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+', '+d.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'}); }
+ logActivity('login');
 }
 
 function signOut() {
+ // Log logout event before clearing
+ logActivity('logout');
  currentUser = null;
  sessionStorage.removeItem('tu');
  document.getElementById('appShell').style.display = 'none';
@@ -94,6 +97,175 @@ function signOut() {
  google.accounts.id.disableAutoSelect();
  switchPage('dashboard', document.querySelectorAll('.nav-item')[0]);
 }
+
+/* ════ LOGIN ACTIVITY TRACKER ════ */
+function logActivity(type) {
+  var logs = JSON.parse(localStorage.getItem('trusted_activity') || '[]');
+  var entry = {
+    type: type,
+    email: currentUser ? currentUser.email : '—',
+    name:  currentUser ? currentUser.name  : '—',
+    time:  new Date().toISOString()
+  };
+  logs.unshift(entry); // newest first
+  if (logs.length > 200) logs = logs.slice(0, 200); // cap at 200 entries
+  localStorage.setItem('trusted_activity', JSON.stringify(logs));
+}
+
+function toggleBell() {
+  var panel = document.getElementById('bellPanel');
+  var isOpen = panel.style.display === 'block';
+  panel.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) renderActivityLog('');
+}
+
+function renderActivityLog(filter) {
+  var logs = JSON.parse(localStorage.getItem('trusted_activity') || '[]');
+  var list = document.getElementById('activityList');
+  if (!logs.length) {
+    list.innerHTML = '<div class="act-empty">No login activity recorded yet.</div>';
+    return;
+  }
+  // Filter
+  var q = filter.toLowerCase().trim();
+  var filtered = q ? logs.filter(function(l){
+    var d = new Date(l.time);
+    var str = (l.email + ' ' + l.name + ' ' + l.type + ' ' +
+      d.toLocaleDateString('en-GB', {day:'numeric',month:'long',year:'numeric'}) + ' ' +
+      d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})).toLowerCase();
+    return str.includes(q);
+  }) : logs;
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="act-empty">No results for "' + filter + '"</div>';
+    return;
+  }
+
+  var html = '';
+  filtered.forEach(function(l) {
+    var d   = new Date(l.time);
+    var date = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+    var time = d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    var icon = l.type === 'login' ? '🟢' : '🔴';
+    var label = l.type === 'login' ? 'Signed in' : 'Signed out';
+    html += '<div class="act-row">' +
+      '<span class="act-icon">' + icon + '</span>' +
+      '<div class="act-info">' +
+        '<div class="act-label">' + label + '</div>' +
+        '<div class="act-user">' + l.name + ' · ' + l.email + '</div>' +
+        '<div class="act-time">' + date + ' at ' + time + '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+function clearActivity() {
+  if (confirm('Clear all login history?')) {
+    localStorage.removeItem('trusted_activity');
+    renderActivityLog('');
+  }
+}
+
+/* ════ CTRL+F PAGE SEARCH ════ */
+var searchHighlights = [];
+var searchIndex = 0;
+
+function initPageSearch() {
+  document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      var bar = document.getElementById('pageSearchBar');
+      bar.style.display = bar.style.display === 'flex' ? 'none' : 'flex';
+      if (bar.style.display === 'flex') {
+        document.getElementById('pageSearchInput').focus();
+        document.getElementById('pageSearchInput').select();
+      } else {
+        clearPageSearch();
+      }
+    }
+    if (e.key === 'Escape') {
+      document.getElementById('pageSearchBar').style.display = 'none';
+      clearPageSearch();
+    }
+  });
+}
+
+function doPageSearch() {
+  clearPageSearch();
+  var q = document.getElementById('pageSearchInput').value.trim();
+  if (!q) { document.getElementById('pageSearchCount').textContent = ''; return; }
+
+  var content = document.querySelector('.page.active .content, .content');
+  // Use TreeWalker to find all text nodes
+  var walker = document.createTreeWalker(
+    document.querySelector('.page.active') || document.body,
+    NodeFilter.SHOW_TEXT, null, false
+  );
+
+  var regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'), 'gi');
+  var nodes = [];
+  var node;
+  while ((node = walker.nextNode())) {
+    if (regex.test(node.nodeValue) && node.parentElement &&
+        !['SCRIPT','STYLE','INPUT'].includes(node.parentElement.tagName)) {
+      nodes.push(node);
+    }
+  }
+
+  searchHighlights = [];
+  nodes.forEach(function(n) {
+    var span = document.createElement('span');
+    var highlighted = n.nodeValue.replace(regex, function(m) {
+      return '<mark class="search-hl">' + m + '</mark>';
+    });
+    span.innerHTML = highlighted;
+    n.parentNode.replaceChild(span, n);
+    span.querySelectorAll('.search-hl').forEach(function(el) {
+      searchHighlights.push(el);
+    });
+  });
+
+  searchIndex = 0;
+  updateSearchCount();
+  if (searchHighlights.length) scrollToHighlight(0);
+}
+
+function scrollToHighlight(i) {
+  searchHighlights.forEach(function(el) { el.classList.remove('search-hl-active'); });
+  if (searchHighlights[i]) {
+    searchHighlights[i].classList.add('search-hl-active');
+    searchHighlights[i].scrollIntoView({block:'center', behavior:'smooth'});
+  }
+}
+
+function updateSearchCount() {
+  var el = document.getElementById('pageSearchCount');
+  el.textContent = searchHighlights.length
+    ? (searchIndex + 1) + ' / ' + searchHighlights.length
+    : 'No results';
+}
+
+function nextSearchResult(dir) {
+  if (!searchHighlights.length) return;
+  searchIndex = (searchIndex + dir + searchHighlights.length) % searchHighlights.length;
+  scrollToHighlight(searchIndex);
+  updateSearchCount();
+}
+
+function clearPageSearch() {
+  document.querySelectorAll('.search-hl, .search-hl-active').forEach(function(el) {
+    var parent = el.parentNode;
+    while (el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
+  });
+  // Merge adjacent text nodes
+  document.body.normalize();
+  searchHighlights = [];
+  searchIndex = 0;
+  document.getElementById('pageSearchCount').textContent = '';
+}
+
 
 /* NAV */
 function switchPage(pageId, navEl) {
@@ -563,6 +735,38 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .logout-section h4{font-size:14px;font-weight:700;color:var(--red);margin-bottom:3px;}
 .logout-section p{font-size:12px;color:#9a4040;}
 
+/* ── BELL PANEL ── */
+#bellPanel{position:fixed;top:62px;right:16px;width:380px;max-width:95vw;background:var(--white);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--shadow-lg);z-index:999;max-height:520px;display:flex;flex-direction:column;}
+.bell-panel-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.bell-panel-title{font-family:'Lora',serif;font-size:16px;font-weight:700;color:var(--dark);}
+.bell-panel-sub{font-size:11px;color:var(--text-light);margin-top:2px;}
+.bell-clear-btn{font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-mid);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.bell-clear-btn:hover{background:var(--red-light);color:var(--red);border-color:#f5c6c6;}
+.bell-close-btn{font-size:14px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-mid);cursor:pointer;font-family:'DM Sans',sans-serif;}
+.bell-close-btn:hover{background:var(--teal-light);color:var(--teal);}
+.bell-search-wrap{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);}
+.bell-search-wrap input{border:none;outline:none;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);flex:1;background:transparent;}
+.bell-search-wrap input::placeholder{color:var(--text-light);}
+.activity-list{overflow-y:auto;flex:1;padding:6px 0;}
+.act-row{display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);transition:background .15s;}
+.act-row:hover{background:var(--bg);}
+.act-row:last-child{border-bottom:none;}
+.act-icon{font-size:18px;flex-shrink:0;margin-top:2px;}
+.act-label{font-size:13px;font-weight:600;color:var(--dark);}
+.act-user{font-size:11px;color:var(--text-mid);margin-top:2px;}
+.act-time{font-size:11px;color:var(--text-light);margin-top:2px;}
+.act-empty{padding:28px;text-align:center;font-size:13px;color:var(--text-light);}
+.bell-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--red);display:none;}
+/* ── PAGE SEARCH BAR (Ctrl+F) ── */
+#pageSearchBar{position:fixed;top:62px;right:16px;display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;box-shadow:var(--shadow-lg);z-index:998;min-width:300px;}
+#pageSearchBar input{border:none;outline:none;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);width:180px;}
+#pageSearchBar input::placeholder{color:var(--text-light);}
+.ps-count{font-size:12px;color:var(--text-light);white-space:nowrap;min-width:55px;text-align:center;}
+.ps-btn{border:none;background:var(--bg);border-radius:6px;padding:3px 7px;cursor:pointer;font-size:12px;color:var(--text-mid);}
+.ps-btn:hover{background:var(--teal-light);color:var(--teal);}
+.ps-close{color:var(--red);}
+mark.search-hl{background:#fff176;border-radius:2px;padding:0 1px;}
+mark.search-hl-active{background:#ff9800;color:#fff;border-radius:2px;}
 /* FOOTER */
 footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:18px 36px;display:flex;justify-content:space-between;align-items:center;}
 .footer-copy{font-size:12px;color:var(--text-light);}
@@ -641,11 +845,40 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <input type="text" id="searchInput" placeholder="Search resources…" onkeydown="handleSearch(event)">
  </div>
  <div class="topbar-actions">
- <div class="icon-btn">🔔</div>
+ <div class="icon-btn" onclick="toggleBell()" title="Login Activity" style="position:relative;">🔔<span id="bellDot" class="bell-dot"></span></div>
  <div class="icon-btn" onclick="switchPage('resources',document.querySelectorAll('.nav-item')[4])">❓</div>
  <div class="icon-btn" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])">👤</div>
  </div>
  </header>
+
+ <!-- BELL PANEL -->
+ <div id="bellPanel" style="display:none;">
+  <div class="bell-panel-header">
+   <div>
+    <div class="bell-panel-title">🔔 Login Activity</div>
+    <div class="bell-panel-sub">Your sign-in history on this device</div>
+   </div>
+   <div style="display:flex;gap:8px;align-items:center;">
+    <button class="bell-clear-btn" onclick="clearActivity()">Clear All</button>
+    <button class="bell-close-btn" onclick="toggleBell()">✕</button>
+   </div>
+  </div>
+  <div class="bell-search-wrap">
+   <span>🔍</span>
+   <input type="text" id="activitySearch" placeholder="Search by date, time, month, name…" oninput="renderActivityLog(this.value)" onkeydown="if(event.key==='Escape')toggleBell()">
+  </div>
+  <div id="activityList" class="activity-list"></div>
+ </div>
+
+ <!-- CTRL+F PAGE SEARCH BAR -->
+ <div id="pageSearchBar" style="display:none;">
+  <span>🔍</span>
+  <input type="text" id="pageSearchInput" placeholder="Find on page…" oninput="doPageSearch()" onkeydown="if(event.key==='Enter')nextSearchResult(1);if(event.key==='Escape'){document.getElementById('pageSearchBar').style.display='none';clearPageSearch();}">
+  <span id="pageSearchCount" class="ps-count"></span>
+  <button class="ps-btn" onclick="nextSearchResult(-1)">▲</button>
+  <button class="ps-btn" onclick="nextSearchResult(1)">▼</button>
+  <button class="ps-btn ps-close" onclick="document.getElementById('pageSearchBar').style.display='none';clearPageSearch()">✕</button>
+ </div>
 
  <div class="content">
 
@@ -921,10 +1154,20 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  var saved = sessionStorage.getItem("tu");
  if (saved) { try { currentUser = JSON.parse(saved); launchApp(); } catch(e){} }
  document.querySelectorAll(".toggle").forEach(function(t){
- t.addEventListener("click", function(){ t.classList.toggle("off"); });
+   t.addEventListener("click", function(){ t.classList.toggle("off"); });
  });
  renderBooks();
+ initPageSearch();
+ // Close bell panel when clicking outside
+ document.addEventListener("click", function(e) {
+   var panel = document.getElementById("bellPanel");
+   if (!panel || panel.style.display !== "block") return;
+   var bellBtn = document.querySelector("[onclick*='toggleBell']");
+   if (!panel.contains(e.target) && bellBtn && !bellBtn.contains(e.target)) {
+     panel.style.display = "none";
+   }
  });
+});
 </script>
 </body>
 </html>
