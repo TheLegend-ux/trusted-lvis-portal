@@ -84,6 +84,17 @@ function launchApp() {
  var t = document.getElementById('accTime');
  if(t){ var d=new Date(); t.textContent=d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+', '+d.toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'}); }
  logActivity('login');
+ // Populate settings account tab
+ var sa = document.getElementById('sProfileAvatar');
+ var sn = document.getElementById('sProfileName');
+ var se = document.getElementById('sProfileEmail');
+ if (sa) {
+   if (currentUser.picture) {
+     sa.innerHTML = '<img src="'+currentUser.picture+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;">';
+   } else { sa.textContent = currentUser.initials; }
+ }
+ if (sn) sn.textContent = currentUser.name;
+ if (se) se.textContent = currentUser.email;
 }
 
 function signOut() {
@@ -266,6 +277,114 @@ function clearPageSearch() {
   document.getElementById('pageSearchCount').textContent = '';
 }
 
+
+/* ════ SETTINGS LOGIC ════ */
+function switchSettingsTab(id, btn) {
+  document.querySelectorAll('.stab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.stab-content').forEach(function(c){ c.classList.remove('active'); });
+  btn.classList.add('active');
+  var el = document.getElementById('stab-' + id);
+  if (el) el.classList.add('active');
+}
+
+function setTheme(theme, btn) {
+  document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.remove('active'); });
+  btn.classList.add('active');
+  var root = document.documentElement;
+  if (theme === 'dark') {
+    root.style.setProperty('--bg','#0f1923');
+    root.style.setProperty('--sidebar-bg','#111d2b');
+    root.style.setProperty('--white','#162032');
+    root.style.setProperty('--text','#e0e8f0');
+    root.style.setProperty('--text-mid','#8faabb');
+    root.style.setProperty('--border','#1e3a50');
+    root.style.setProperty('--dark','#e0e8f0');
+  } else if (theme === 'sepia') {
+    root.style.setProperty('--bg','#f4ece0');
+    root.style.setProperty('--sidebar-bg','#ede3d2');
+    root.style.setProperty('--white','#fdf6ec');
+    root.style.setProperty('--text','#3b2a1a');
+    root.style.setProperty('--text-mid','#7a5c3a');
+    root.style.setProperty('--border','#d4c4a8');
+    root.style.setProperty('--dark','#2a1a0a');
+  } else {
+    root.style.setProperty('--bg','#f5f3ee');
+    root.style.setProperty('--sidebar-bg','#faf9f6');
+    root.style.setProperty('--white','#ffffff');
+    root.style.setProperty('--text','#2c3e50');
+    root.style.setProperty('--text-mid','#5a6a7a');
+    root.style.setProperty('--border','#e0dbd2');
+    root.style.setProperty('--dark','#1a2332');
+  }
+  localStorage.setItem('trusted_theme', theme);
+}
+
+function applyFontSize(val) {
+  document.getElementById('fontSizeVal').textContent = val + 'px';
+  document.querySelector('.content').style.fontSize = val + 'px';
+  localStorage.setItem('trusted_fontsize', val);
+}
+
+function saveTarget(val) {
+  localStorage.setItem('trusted_target', val);
+  var fb = document.getElementById('targetFeedback');
+  var n = parseInt(val);
+  if (!val || isNaN(n)) { fb.textContent = ''; return; }
+  if (n >= 90)       { fb.style.color='#27ae60'; fb.textContent = '🎯 Excellent target! You can do it!'; }
+  else if (n >= 75)  { fb.style.color='var(--teal)'; fb.textContent = '👍 Good target — stay consistent!'; }
+  else if (n >= 60)  { fb.style.color='var(--warm)'; fb.textContent = '📈 Aim higher — you have potential!'; }
+  else               { fb.style.color='var(--red)'; fb.textContent = '⚠️ Consider raising your target.'; }
+}
+
+function saveExamDate(val) {
+  if (!val) return;
+  localStorage.setItem('trusted_examdate', val);
+  updateCountdown(val);
+}
+
+function updateCountdown(dateStr) {
+  var el = document.getElementById('countdownDisplay');
+  if (!dateStr) { el.classList.remove('show'); return; }
+  var exam = new Date(dateStr);
+  var now  = new Date();
+  now.setHours(0,0,0,0);
+  var diff = Math.ceil((exam - now) / (1000*60*60*24));
+  el.classList.add('show');
+  if (diff < 0) {
+    el.innerHTML = '<div class="countdown-days">Done!</div><div class="countdown-label">Your exam has passed.</div>';
+  } else if (diff === 0) {
+    el.innerHTML = '<div class="countdown-days">Today!</div><div class="countdown-label">Exam day — all the best!</div>';
+  } else {
+    el.innerHTML = '<div class="countdown-days">' + diff + '</div><div class="countdown-label">days until your Board Exam</div><div class="countdown-date">' + exam.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) + '</div>';
+  }
+}
+
+function restoreSettings() {
+  // Theme
+  var theme = localStorage.getItem('trusted_theme');
+  if (theme) {
+    var btn = document.querySelector('.theme-btn[onclick*="\''+theme+'\'"]');
+    if (btn) setTheme(theme, btn);
+  }
+  // Font size
+  var fs = localStorage.getItem('trusted_fontsize');
+  if (fs) {
+    var sl = document.getElementById('fontSlider');
+    if (sl) { sl.value = fs; applyFontSize(fs); }
+  }
+  // Target
+  var target = localStorage.getItem('trusted_target');
+  if (target) {
+    var ti = document.getElementById('targetInput');
+    if (ti) { ti.value = target; saveTarget(target); }
+  }
+  // Exam date
+  var ed = localStorage.getItem('trusted_examdate');
+  if (ed) {
+    var di = document.getElementById('examDate');
+    if (di) { di.value = ed; updateCountdown(ed); }
+  }
+}
 
 /* NAV */
 function switchPage(pageId, navEl) {
@@ -870,6 +989,48 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .res-card h3{font-size:15px;font-weight:700;color:var(--dark);margin-bottom:5px;}
 .res-card p{font-size:12px;color:var(--text-mid);line-height:1.5;}
 
+/* SETTINGS DASHBOARD */
+.settings-dashboard{display:grid;grid-template-columns:180px 1fr;gap:24px;align-items:start;}
+.stab-nav{display:flex;flex-direction:column;gap:4px;background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:12px;position:sticky;top:80px;}
+.stab-btn{display:flex;align-items:center;gap:10px;padding:11px 14px;border:none;background:transparent;border-radius:var(--r);font-size:14px;font-weight:500;color:var(--text-mid);cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;text-align:left;width:100%;}
+.stab-btn:hover{background:var(--teal-light);color:var(--teal);}
+.stab-btn.active{background:var(--teal-light);color:var(--teal);font-weight:600;}
+.stab-content{display:none;}
+.stab-content.active{display:block;}
+/* Theme picker */
+.theme-options{display:flex;gap:12px;flex-wrap:wrap;}
+.theme-btn{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 20px;border:2px solid var(--border);border-radius:var(--r);background:var(--bg);cursor:pointer;font-size:13px;font-weight:600;color:var(--text-mid);transition:all .2s;font-family:'DM Sans',sans-serif;}
+.theme-btn:hover{border-color:var(--teal);color:var(--teal);}
+.theme-btn.active{border-color:var(--teal);color:var(--teal);background:var(--teal-light);}
+.theme-preview{width:40px;height:26px;border-radius:6px;display:block;border:1px solid var(--border);}
+.light-prev{background:linear-gradient(135deg,#f5f3ee,#fff);}
+.dark-prev{background:linear-gradient(135deg,#1a2332,#2d5f5f);}
+.sepia-prev{background:linear-gradient(135deg,#f4ecd8,#e8d5b0);}
+/* Font slider */
+.font-slider-wrap{display:flex;align-items:center;gap:12px;}
+.font-label-sm{font-size:12px;color:var(--text-light);font-weight:600;}
+.font-label-lg{font-size:20px;color:var(--text-mid);font-weight:700;}
+.font-slider{flex:1;accent-color:var(--teal);cursor:pointer;}
+.font-size-val{font-size:12px;color:var(--teal);font-weight:700;min-width:34px;text-align:right;}
+/* Academic tab */
+.target-wrap{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.target-input{padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--r);font-size:15px;font-family:'DM Sans',sans-serif;color:var(--dark);outline:none;transition:border-color .2s;width:120px;}
+.target-input:focus{border-color:var(--teal);}
+.target-pct{font-size:18px;font-weight:700;color:var(--teal);}
+.target-feedback{font-size:13px;font-weight:600;margin-top:4px;min-height:20px;}
+.countdown-display{margin-top:16px;background:linear-gradient(135deg,var(--dark-teal),#2a5050);border-radius:var(--r);padding:20px 24px;color:#fff;display:none;}
+.countdown-display.show{display:block;}
+.countdown-days{font-family:'Lora',serif;font-size:42px;font-weight:700;line-height:1;}
+.countdown-label{font-size:13px;opacity:.75;margin-top:4px;}
+.countdown-date{font-size:12px;opacity:.6;margin-top:6px;}
+/* Account tab in settings */
+.sprofile-wrap{display:flex;align-items:center;gap:18px;}
+.sprofile-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--teal),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;flex-shrink:0;border:3px solid var(--teal-light);}
+.sprofile-name{font-size:17px;font-weight:700;color:var(--dark);margin-bottom:3px;}
+.sprofile-email{font-size:13px;color:var(--text-mid);margin-bottom:3px;}
+.sprofile-school{font-size:11px;color:var(--text-light);}
+.logout-full-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 24px;background:var(--red-light);color:var(--red);border:1.5px solid #f5c6c6;border-radius:var(--r);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.logout-full-btn:hover{background:#fbd5d5;border-color:var(--red);}
 /* SETTINGS */
 .settings-section{background:var(--white);border:1px solid var(--border);border-radius:var(--rl);padding:26px;margin-bottom:20px;}
 .settings-section h3{font-family:'Lora',serif;font-size:17px;font-weight:700;color:var(--dark);margin-bottom:18px;}
@@ -911,18 +1072,22 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .sd-hl{background:#fff176;border-radius:2px;padding:0 1px;font-style:normal;}
 .sd-empty{padding:16px 14px;font-size:13px;color:var(--text-light);text-align:center;}
 /* ── BELL PANEL ── */
-#bellPanel{position:fixed;top:62px;right:16px;width:380px;max-width:95vw;background:var(--white);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--shadow-lg);z-index:999;max-height:520px;display:flex;flex-direction:column;}
-.bell-panel-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+#bellPanel{position:fixed;top:62px;right:16px;width:380px;max-width:95vw;background:var(--white);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--shadow-lg);z-index:999;max-height:350px;display:flex;flex-direction:column;overflow:hidden;}
+.bell-panel-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;flex-shrink:0;}
 .bell-panel-title{font-family:'Lora',serif;font-size:16px;font-weight:700;color:var(--dark);}
 .bell-panel-sub{font-size:11px;color:var(--text-light);margin-top:2px;}
 .bell-clear-btn{font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-mid);cursor:pointer;font-family:'DM Sans',sans-serif;}
 .bell-clear-btn:hover{background:var(--red-light);color:var(--red);border-color:#f5c6c6;}
 .bell-close-btn{font-size:14px;padding:4px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text-mid);cursor:pointer;font-family:'DM Sans',sans-serif;}
 .bell-close-btn:hover{background:var(--teal-light);color:var(--teal);}
-.bell-search-wrap{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);}
+.bell-search-wrap{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
 .bell-search-wrap input{border:none;outline:none;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);flex:1;background:transparent;}
 .bell-search-wrap input::placeholder{color:var(--text-light);}
-.activity-list{overflow-y:auto;flex:1;padding:6px 0;}
+.activity-list{overflow-y:auto;flex:1;padding:6px 0;scrollbar-width:thin;scrollbar-color:var(--teal-mid) var(--bg);}
+.activity-list::-webkit-scrollbar{width:5px;}
+.activity-list::-webkit-scrollbar-track{background:var(--bg);border-radius:10px;}
+.activity-list::-webkit-scrollbar-thumb{background:var(--teal-mid);border-radius:10px;}
+.activity-list::-webkit-scrollbar-thumb:hover{background:var(--teal);}
 .act-row{display:flex;align-items:flex-start;gap:12px;padding:12px 18px;border-bottom:1px solid var(--border);transition:background .15s;}
 .act-row:hover{background:var(--bg);}
 .act-row:last-child{border-bottom:none;}
@@ -932,6 +1097,12 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .act-time{font-size:11px;color:var(--text-light);margin-top:2px;}
 .act-empty{padding:28px;text-align:center;font-size:13px;color:var(--text-light);}
 .bell-dot{position:absolute;top:5px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--red);display:none;}
+/* Resources icon button + tooltip */
+.icon-btn-resources{position:relative;}
+.icon-btn-resources:hover{transform:scale(1.1);background:var(--teal-light);}
+.icon-tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;font-size:11px;font-weight:600;padding:5px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .2s;font-family:'DM Sans',sans-serif;}
+.icon-btn-resources:hover .icon-tooltip{opacity:1;}
+.icon-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:var(--dark);}
 /* ── PAGE SEARCH BAR (Ctrl+F) ── */
 #pageSearchBar{position:fixed;top:62px;right:16px;display:flex;align-items:center;gap:8px;background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:8px 14px;box-shadow:var(--shadow-lg);z-index:998;min-width:300px;}
 #pageSearchBar input{border:none;outline:none;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);width:180px;}
@@ -1025,7 +1196,10 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  </div>
  <div class="topbar-actions">
  <div class="icon-btn" onclick="toggleBell()" title="Login Activity" style="position:relative;">🔔<span id="bellDot" class="bell-dot"></span></div>
- <div class="icon-btn" onclick="switchPage('resources',document.querySelectorAll('.nav-item')[4])">❓</div>
+ <div class="icon-btn icon-btn-resources" onclick="switchPage('resources',document.querySelectorAll('.nav-item')[4])" title="NCERT Resources &amp; Notes">
+  <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+  <span class="icon-tooltip">NCERT Resources &amp; Notes</span>
+ </div>
  <div class="icon-btn" onclick="switchPage('account',document.querySelectorAll('.nav-item')[6])">👤</div>
  </div>
  </header>
@@ -1261,26 +1435,129 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
 
  <!-- SETTINGS -->
  <div class="page" id="page-settings">
- <div class="eyebrow">Preferences</div><h1 class="page-title" style="margin-bottom:26px;">Settings</h1>
- <div class="settings-section"><h3>Notifications</h3>
- <div class="setting-row"><div class="setting-info"><h4>Security Alerts</h4><p>Get notified of unusual login activity.</p></div><div class="toggle"></div></div>
- <div class="setting-row"><div class="setting-info"><h4>Weekly Cyber Tip</h4><p>Receive a cybersecurity tip every Monday.</p></div><div class="toggle"></div></div>
- <div class="setting-row"><div class="setting-info"><h4>Tool Updates</h4><p>Be notified when saved AI tools are updated.</p></div><div class="toggle off"></div></div>
- </div>
- <div class="settings-section"><h3>Privacy &amp; Security</h3>
- <div class="setting-row"><div class="setting-info"><h4>Two-Factor Authentication</h4><p>Require 2FA every login. <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="inline-link">Set up →</a></p></div><div class="toggle"></div></div>
- <div class="setting-row"><div class="setting-info"><h4>Session Timeout</h4><p>Auto log-out after 30 minutes of inactivity.</p></div><div class="toggle"></div></div>
- <div class="setting-row"><div class="setting-info"><h4>Activity Log</h4><p>Keep a log of logins and document scans.</p></div><div class="toggle off"></div></div>
- </div>
- <div class="settings-section"><h3>Quick Launch</h3>
- <div class="pill-strip" style="margin-top:4px;">
- <a href="https://gamma.app" target="_blank" class="pill">Gamma</a>
- <a href="https://quillbot.com" target="_blank" class="pill">QuillBot</a>
- <a href="https://www.grammarly.com" target="_blank" class="pill">Grammarly</a>
- <a href="https://gptzero.me" target="_blank" class="pill">GPTZero</a>
- <a href="https://ncert.nic.in/textbook.php" target="_blank" class="pill">NCERT Books</a>
- </div>
- </div>
+  <div class="eyebrow">Preferences</div>
+  <h1 class="page-title" style="margin-bottom:24px;">Settings</h1>
+  <div class="settings-dashboard">
+
+   <!-- Side tabs -->
+   <div class="stab-nav">
+    <button class="stab-btn active" onclick="switchSettingsTab('general',this)">
+     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+     General
+    </button>
+    <button class="stab-btn" onclick="switchSettingsTab('academic',this)">
+     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+     Academic
+    </button>
+    <button class="stab-btn" onclick="switchSettingsTab('account-s',this)">
+     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+     Account
+    </button>
+   </div>
+
+   <!-- Tab: General -->
+   <div class="stab-content active" id="stab-general">
+    <div class="settings-section">
+     <h3>Notifications</h3>
+     <div class="setting-row"><div class="setting-info"><h4>Security Alerts</h4><p>Get notified of unusual login activity.</p></div><div class="toggle"></div></div>
+     <div class="setting-row"><div class="setting-info"><h4>Weekly Cyber Tip</h4><p>Receive a cybersecurity tip every Monday.</p></div><div class="toggle"></div></div>
+     <div class="setting-row"><div class="setting-info"><h4>Tool Updates</h4><p>Be notified when saved AI tools are updated.</p></div><div class="toggle off"></div></div>
+    </div>
+    <div class="settings-section">
+     <h3>Theme</h3>
+     <div class="theme-options">
+      <button class="theme-btn active" onclick="setTheme('light',this)">
+       <span class="theme-preview light-prev"></span>Light
+      </button>
+      <button class="theme-btn" onclick="setTheme('dark',this)">
+       <span class="theme-preview dark-prev"></span>Dark
+      </button>
+      <button class="theme-btn" onclick="setTheme('sepia',this)">
+       <span class="theme-preview sepia-prev"></span>Sepia
+      </button>
+     </div>
+    </div>
+    <div class="settings-section">
+     <h3>Font Size</h3>
+     <p style="font-size:12px;color:var(--text-light);margin-bottom:14px;">Adjust text size for reading long study notes comfortably.</p>
+     <div class="font-slider-wrap">
+      <span class="font-label-sm">A</span>
+      <input type="range" id="fontSlider" min="12" max="20" value="14" step="1" class="font-slider" oninput="applyFontSize(this.value)">
+      <span class="font-label-lg">A</span>
+      <span class="font-size-val" id="fontSizeVal">14px</span>
+     </div>
+    </div>
+    <div class="settings-section">
+     <h3>Privacy &amp; Security</h3>
+     <div class="setting-row"><div class="setting-info"><h4>Two-Factor Authentication</h4><p>Require 2FA every login. <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="inline-link">Set up →</a></p></div><div class="toggle"></div></div>
+     <div class="setting-row"><div class="setting-info"><h4>Session Timeout</h4><p>Auto log-out after 30 minutes of inactivity.</p></div><div class="toggle"></div></div>
+     <div class="setting-row"><div class="setting-info"><h4>Activity Log</h4><p>Keep a log of logins and document scans.</p></div><div class="toggle off"></div></div>
+    </div>
+   </div>
+
+   <!-- Tab: Academic -->
+   <div class="stab-content" id="stab-academic">
+    <div class="settings-section">
+     <h3>Board Exam Target</h3>
+     <p style="font-size:12px;color:var(--text-light);margin-bottom:16px;">Set your target percentage for the upcoming Board Exams.</p>
+     <div class="target-wrap">
+      <input type="number" id="targetInput" min="0" max="100" placeholder="e.g. 90"
+       class="target-input" oninput="saveTarget(this.value)">
+      <span class="target-pct">%</span>
+     </div>
+     <div id="targetFeedback" class="target-feedback"></div>
+    </div>
+    <div class="settings-section">
+     <h3>Exam Countdown</h3>
+     <p style="font-size:12px;color:var(--text-light);margin-bottom:16px;">Set your Board Exam date to track how many days are left.</p>
+     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+      <input type="date" id="examDate" class="target-input" style="width:auto;" onchange="saveExamDate(this.value)">
+      <button class="btn btn-outline btn-sm" onclick="saveExamDate(document.getElementById('examDate').value)">Set Date</button>
+     </div>
+     <div id="countdownDisplay" class="countdown-display"></div>
+    </div>
+    <div class="settings-section">
+     <h3>Quick Launch</h3>
+     <div class="pill-strip" style="margin-top:4px;">
+      <a href="https://gamma.app" target="_blank" class="pill">Gamma</a>
+      <a href="https://quillbot.com" target="_blank" class="pill">QuillBot</a>
+      <a href="https://www.grammarly.com" target="_blank" class="pill">Grammarly</a>
+      <a href="https://gptzero.me" target="_blank" class="pill">GPTZero</a>
+      <a href="https://ncert.nic.in/textbook.php" target="_blank" class="pill">NCERT Books</a>
+     </div>
+    </div>
+   </div>
+
+   <!-- Tab: Account -->
+   <div class="stab-content" id="stab-account-s">
+    <div class="settings-section">
+     <h3>Profile</h3>
+     <div class="sprofile-wrap">
+      <div class="sprofile-avatar" id="sProfileAvatar">?</div>
+      <div>
+       <div class="sprofile-name" id="sProfileName">—</div>
+       <div class="sprofile-email" id="sProfileEmail">—</div>
+       <div class="sprofile-school">Lotus Valley International School, Gurugram</div>
+      </div>
+     </div>
+    </div>
+    <div class="settings-section">
+     <h3>Session</h3>
+     <div class="acc-row"><span class="acc-row-label">Sign-in Method</span><span class="acc-row-value">Google OAuth 2.0</span></div>
+     <div class="acc-row"><span class="acc-row-label">Domain Lock</span><span class="acc-status">✅ Active</span></div>
+     <div class="acc-row"><span class="acc-row-label">Plan</span><span class="acc-status">🎓 Free · School Staff</span></div>
+    </div>
+    <div class="settings-section">
+     <h3>Sign Out</h3>
+     <p style="font-size:13px;color:var(--text-mid);margin-bottom:18px;">You will be returned to the login screen. Your Google account remains unaffected.</p>
+     <button class="logout-full-btn" onclick="signOut()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Sign Out of TrustED
+     </button>
+    </div>
+   </div>
+
+  </div>
  </div>
 
  <!-- MY ACCOUNT -->
@@ -1337,6 +1614,7 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  });
  renderBooks();
  initPageSearch();
+ restoreSettings();
  // Close search dropdown when clicking outside
  document.addEventListener("click", function(e) {
    var box = document.querySelector(".search-box");
