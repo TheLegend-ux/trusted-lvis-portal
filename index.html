@@ -278,18 +278,183 @@ function switchPage(pageId, navEl) {
  var si=document.getElementById('searchInput'); if(si) si.placeholder=ph[pageId]||'Search…';
  window.scrollTo(0,0);
 }
-function handleSearch(e) {
- if(e.key!=='Enter') return;
- var q=e.target.value.toLowerCase().trim(); if(!q) return;
- var n=document.querySelectorAll('.nav-item');
- if(['gamma','slide','presentation','beautiful','quill','grammarly','grammar','write','paraphrase','gptzero','originality','copyleaks','chatgpt','notion','canva'].some(function(k){return q.includes(k);})) switchPage('aitoolbox',n[1]);
- else if(['phish','cyber','safety','threat'].some(function(k){return q.includes(k);})) switchPage('cyber',n[3]);
- else if(['2fa','password','authenticator','security'].some(function(k){return q.includes(k);})) switchPage('security',n[2]);
- else if(['ncert','book','textbook','class','grade','subject'].some(function(k){return q.includes(k);})) switchPage('resources',n[4]);
- else if(['resource','guide','ferpa','policy'].some(function(k){return q.includes(k);})) switchPage('resources',n[4]);
- else if(['setting','notification'].some(function(k){return q.includes(k);})) switchPage('settings',n[5]);
- else if(['account','profile','logout'].some(function(k){return q.includes(k);})) switchPage('account',n[6]);
+/* ════ SMART SEARCH ════ */
+
+// Build the full search index — every searchable item on the site
+function buildSearchIndex() {
+  var idx = [];
+
+  // ── AI TOOLS page items ──
+  var tools = [
+    {t:'Gamma',                 desc:'AI-powered presentation creator',         page:'aitoolbox', url:'https://gamma.app'},
+    {t:'Beautiful.ai',          desc:'Smart slides that adapt to your content', page:'aitoolbox', url:'https://www.beautiful.ai'},
+    {t:'GPTZero',               desc:'AI detection — academic integrity',       page:'aitoolbox', url:'https://gptzero.me'},
+    {t:'Originality.ai',        desc:'Plagiarism & AI detector',                page:'aitoolbox', url:'https://originality.ai'},
+    {t:'Copyleaks',             desc:'Multilingual AI text detection',          page:'aitoolbox', url:'https://copyleaks.com'},
+    {t:'QuillBot',              desc:'Paraphrasing & writing assistant',        page:'aitoolbox', url:'https://quillbot.com'},
+    {t:'Grammarly',             desc:'Grammar, tone & style checker',           page:'aitoolbox', url:'https://www.grammarly.com'},
+    {t:'ChatGPT',               desc:'General-purpose AI assistant',            page:'aitoolbox', url:'https://chat.openai.com'},
+    {t:'Notion AI',             desc:'Notes & lesson planning with AI',         page:'aitoolbox', url:'https://www.notion.so'},
+    {t:'Canva',                 desc:'Design worksheets & classroom visuals',   page:'aitoolbox', url:'https://www.canva.com'},
+    {t:'Duck.ai',               desc:'Privacy-focused AI — no tracking',        page:'aitoolbox', url:'https://duck.ai'},
+    {t:'Claude (Anthropic)',    desc:'Advanced AI for research & writing',      page:'aitoolbox', url:'https://claude.ai'},
+    {t:'Gemini (Google)',       desc:'Google AI for research & ideas',          page:'aitoolbox', url:'https://gemini.google.com'},
+    {t:'Turnitin',              desc:'Academic integrity & plagiarism checker', page:'aitoolbox', url:'https://www.turnitin.com'},
+  ];
+  tools.forEach(function(item){
+    idx.push({ title:item.t, sub:'AI Tools', desc:item.desc, page:'aitoolbox', url:item.url, type:'tool' });
+  });
+
+  // ── SECURITY page items ──
+  var secItems = [
+    {t:'What is 2FA?',                   desc:'Two-factor authentication explained'},
+    {t:'Google Authenticator',           desc:'Easiest authenticator app — setup guide',    url:'https://support.google.com/accounts/answer/1066447'},
+    {t:'Microsoft Authenticator',        desc:'Best for Office 365 — setup guide',          url:'https://www.microsoft.com/en-us/security/mobile-authenticator-app'},
+    {t:'Authy by Twilio',                desc:'Multi-device authenticator — setup guide',   url:'https://authy.com/download/'},
+    {t:'How to Secure Your Email',       desc:'Email phishing protection steps'},
+    {t:'FERPA Compliance',               desc:'Student privacy legal requirements'},
+  ];
+  secItems.forEach(function(item){
+    idx.push({ title:item.t, sub:'Security', desc:item.desc, page:'security', url:item.url||null, type:'security' });
+  });
+
+  // ── CYBER TIPS page items ──
+  var cyberItems = [
+    {t:'Classroom Safety',               desc:'Screen lock & projection protocols'},
+    {t:'Student Data Protection',        desc:'FERPA & COPPA compliance tips'},
+    {t:'Avoiding Phishing in Schools',   desc:'How to spot phishing emails'},
+    {t:'Verify the Sender',              desc:'Check for email domain spoofing'},
+    {t:'Urgency is a Red Flag',          desc:'How phishers induce panic'},
+    {t:'Reporting Protocol',             desc:'How to report suspicious emails'},
+  ];
+  cyberItems.forEach(function(item){
+    idx.push({ title:item.t, sub:'Cyber Tips', desc:item.desc, page:'cyber', url:null, type:'cyber' });
+  });
+
+  // ── RESOURCES page items ──
+  var resItems = [
+    {t:'AI in the Classroom (ISTE)',     desc:'Responsible AI integration guide',        url:'https://www.iste.org/areas-of-focus/ai-in-education'},
+    {t:'Academic Integrity in the Age of AI', desc:'Turnitin guide on AI policies',      url:'https://www.turnitin.com/blog/academic-integrity-in-the-age-of-ai'},
+    {t:'Cybersecurity Starter Pack',     desc:'NCSA phishing & 2FA guide',               url:'https://staysafeonline.org/resources/'},
+    {t:'Canva for Education',            desc:'Free templates & classroom tools',        url:'https://www.canva.com/education/'},
+    {t:'AI for Education (AI4E)',        desc:'Free AI literacy lesson plans',           url:'https://aiforeducation.io'},
+    {t:'FERPA Compliance',               desc:'US Dept. of Ed student privacy guide',    url:'https://studentprivacy.ed.gov/ferpa'},
+  ];
+  resItems.forEach(function(item){
+    idx.push({ title:item.t, sub:'Resources', desc:item.desc, page:'resources', url:item.url, type:'resource' });
+  });
+
+  // ── NCERT BOOKS ──
+  var gradeLabels = {'9':'Class 9','10':'Class 10','11':'Class 11','12':'Class 12'};
+  var streamLabels = {'all':'','science':' › Science','commerce':' › Commerce','arts':' › Arts'};
+  Object.keys(NCERT).forEach(function(grade) {
+    var gradeData = NCERT[grade];
+    gradeData.subjects.forEach(function(subj) {
+      subj.books.forEach(function(book) {
+        var stream = (gradeData.streams && subj.s !== 'all') ? streamLabels[subj.s] : '';
+        idx.push({
+          title: book.t,
+          sub:   'Resources › ' + gradeLabels[grade] + stream,
+          desc:  subj.name + ' · ' + gradeLabels[grade],
+          page:  'resources',
+          url:   book.u,
+          type:  'ncert',
+          grade: grade,
+          stream: subj.s
+        });
+      });
+    });
+  });
+
+  return idx;
 }
+
+var SEARCH_INDEX = null; // built lazily on first search
+
+function doSmartSearch(q) {
+  var dropdown = document.getElementById('searchDropdown');
+  q = q.trim();
+  if (!q || q.length < 2) { dropdown.style.display='none'; return; }
+
+  if (!SEARCH_INDEX) SEARCH_INDEX = buildSearchIndex();
+
+  var ql = q.toLowerCase();
+  var results = SEARCH_INDEX.filter(function(item) {
+    return (item.title + ' ' + item.sub + ' ' + item.desc).toLowerCase().includes(ql);
+  }).slice(0, 12); // max 12 results
+
+  if (!results.length) {
+    dropdown.innerHTML = '<div class="sd-empty">No results for "' + q + '"</div>';
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  var icons = { tool:'✦', security:'🔒', cyber:'🛡️', resource:'📂', ncert:'📗' };
+  var html = '';
+  results.forEach(function(r, i) {
+    html += '<div class="sd-item" onclick="goSearchResult('+i+')" data-idx="'+i+'">' +
+      '<span class="sd-icon">' + (icons[r.type]||'•') + '</span>' +
+      '<div class="sd-text">' +
+        '<div class="sd-title">' + highlight(r.title, q) + '</div>' +
+        '<div class="sd-sub">' + r.sub + '</div>' +
+      '</div>' +
+    '</div>';
+  });
+  dropdown.innerHTML = html;
+  dropdown.style.display = 'block';
+  // Store results for click handler
+  dropdown._results = results;
+}
+
+function highlight(text, q) {
+  var re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi');
+  return text.replace(re, '<mark class="sd-hl">$1</mark>');
+}
+
+function goSearchResult(idx) {
+  var dropdown = document.getElementById('searchDropdown');
+  var results = dropdown._results;
+  if (!results || !results[idx]) return;
+  var r = results[idx];
+
+  // Navigate to the right page
+  var navItems = document.querySelectorAll('.nav-item');
+  var pageMap = { dashboard:0, aitoolbox:1, security:2, cyber:3, resources:4, settings:5, account:6 };
+  switchPage(r.page, navItems[pageMap[r.page]]);
+
+  // If NCERT book — switch to correct grade tab
+  if (r.type === 'ncert' && r.grade) {
+    var gradeBtn = document.querySelector('.grade-tab[onclick*="\''+r.grade+'\'"]');
+    if (gradeBtn) selectGrade(r.grade, gradeBtn);
+    // If stream needed, switch stream tab
+    if (r.stream && r.stream !== 'all') {
+      setTimeout(function() {
+        var streamBtn = document.querySelector('.stream-tab[onclick*="\''+r.stream+'\'"]');
+        if (streamBtn) selectStream(r.stream, streamBtn);
+      }, 100);
+    }
+    // Open the PDF in new tab
+    if (r.url) setTimeout(function(){ window.open(r.url,'_blank'); }, 300);
+  } else if (r.url) {
+    // For tools/resources with URLs — open in new tab
+    window.open(r.url, '_blank');
+  }
+
+  // Clear search
+  document.getElementById('searchInput').value = '';
+  dropdown.style.display = 'none';
+}
+
+function handleSearchKey(e) {
+  var dropdown = document.getElementById('searchDropdown');
+  if (e.key === 'Escape') { dropdown.style.display='none'; return; }
+  if (e.key === 'ArrowDown') {
+    var items = dropdown.querySelectorAll('.sd-item');
+    if (items.length) { items[0].focus(); e.preventDefault(); }
+    return;
+  }
+}
+
 
 /* NCERT */
 var selGrade='9', selStream='all';
@@ -735,6 +900,16 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .logout-section h4{font-size:14px;font-weight:700;color:var(--red);margin-bottom:3px;}
 .logout-section p{font-size:12px;color:#9a4040;}
 
+/* ── SMART SEARCH DROPDOWN ── */
+.search-dropdown{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--white);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-lg);z-index:9999;max-height:380px;overflow-y:auto;}
+.sd-item{display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer;transition:background .15s;border-bottom:1px solid var(--border);}
+.sd-item:last-child{border-bottom:none;}
+.sd-item:hover,.sd-item:focus{background:var(--teal-light);outline:none;}
+.sd-icon{font-size:16px;flex-shrink:0;width:22px;text-align:center;}
+.sd-title{font-size:13px;font-weight:600;color:var(--dark);}
+.sd-sub{font-size:11px;color:var(--text-light);margin-top:1px;}
+.sd-hl{background:#fff176;border-radius:2px;padding:0 1px;font-style:normal;}
+.sd-empty{padding:16px 14px;font-size:13px;color:var(--text-light);text-align:center;}
 /* ── BELL PANEL ── */
 #bellPanel{position:fixed;top:62px;right:16px;width:380px;max-width:95vw;background:var(--white);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--shadow-lg);z-index:999;max-height:520px;display:flex;flex-direction:column;}
 .bell-panel-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
@@ -840,9 +1015,13 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <div class="main">
  <header class="topbar">
  <div class="topbar-title">TrustED</div>
- <div class="search-box">
+ <div class="search-box" style="position:relative;">
  <span>🔍</span>
- <input type="text" id="searchInput" placeholder="Search resources…" onkeydown="handleSearch(event)">
+ <input type="text" id="searchInput" placeholder="Search everything…"
+   oninput="doSmartSearch(this.value)"
+   onkeydown="handleSearchKey(event)"
+   autocomplete="off">
+ <div id="searchDropdown" class="search-dropdown" style="display:none;"></div>
  </div>
  <div class="topbar-actions">
  <div class="icon-btn" onclick="toggleBell()" title="Login Activity" style="position:relative;">🔔<span id="bellDot" class="bell-dot"></span></div>
@@ -1158,6 +1337,12 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  });
  renderBooks();
  initPageSearch();
+ // Close search dropdown when clicking outside
+ document.addEventListener("click", function(e) {
+   var box = document.querySelector(".search-box");
+   var dd  = document.getElementById("searchDropdown");
+   if (dd && !box.contains(e.target)) { dd.style.display="none"; }
+ });
  // Close bell panel when clicking outside
  document.addEventListener("click", function(e) {
    var panel = document.getElementById("bellPanel");
