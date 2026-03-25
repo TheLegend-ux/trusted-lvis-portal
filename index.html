@@ -291,31 +291,16 @@ function setTheme(theme, btn) {
   document.querySelectorAll('.theme-btn').forEach(function(b){ b.classList.remove('active'); });
   btn.classList.add('active');
   var root = document.documentElement;
-  if (theme === 'dark') {
-    root.style.setProperty('--bg','#0f1923');
-    root.style.setProperty('--sidebar-bg','#111d2b');
-    root.style.setProperty('--white','#162032');
-    root.style.setProperty('--text','#e0e8f0');
-    root.style.setProperty('--text-mid','#8faabb');
-    root.style.setProperty('--border','#1e3a50');
-    root.style.setProperty('--dark','#e0e8f0');
-  } else if (theme === 'sepia') {
-    root.style.setProperty('--bg','#f4ece0');
-    root.style.setProperty('--sidebar-bg','#ede3d2');
-    root.style.setProperty('--white','#fdf6ec');
-    root.style.setProperty('--text','#3b2a1a');
-    root.style.setProperty('--text-mid','#7a5c3a');
-    root.style.setProperty('--border','#d4c4a8');
-    root.style.setProperty('--dark','#2a1a0a');
-  } else {
-    root.style.setProperty('--bg','#f5f3ee');
-    root.style.setProperty('--sidebar-bg','#faf9f6');
-    root.style.setProperty('--white','#ffffff');
-    root.style.setProperty('--text','#2c3e50');
-    root.style.setProperty('--text-mid','#5a6a7a');
-    root.style.setProperty('--border','#e0dbd2');
-    root.style.setProperty('--dark','#1a2332');
-  }
+  var themes = {
+    light:    {'--bg':'#f5f3ee','--sidebar-bg':'#faf9f6','--white':'#ffffff','--text':'#2c3e50','--text-mid':'#5a6a7a','--border':'#e0dbd2','--dark':'#1a2332'},
+    dark:     {'--bg':'#0f1923','--sidebar-bg':'#111d2b','--white':'#162032','--text':'#e0e8f0','--text-mid':'#8faabb','--border':'#1e3a50','--dark':'#e0e8f0'},
+    sepia:    {'--bg':'#f4ece0','--sidebar-bg':'#ede3d2','--white':'#fdf6ec','--text':'#3b2a1a','--text-mid':'#7a5c3a','--border':'#d4c4a8','--dark':'#2a1a0a'},
+    forest:   {'--bg':'#0e1a0e','--sidebar-bg':'#111f11','--white':'#162416','--text':'#c8e6c8','--text-mid':'#7aad7a','--border':'#1a3a1a','--dark':'#c8e6c8'},
+    midnight: {'--bg':'#07071a','--sidebar-bg':'#0b0b22','--white':'#10102e','--text':'#c0c8f0','--text-mid':'#7080c0','--border':'#181840','--dark':'#c0c8f0'},
+    slate:    {'--bg':'#1a2030','--sidebar-bg':'#202840','--white':'#283050','--text':'#d0d8f0','--text-mid':'#8090c0','--border':'#2a3858','--dark':'#d0d8f0'},
+  };
+  var t = themes[theme] || themes.light;
+  Object.keys(t).forEach(function(k){ root.style.setProperty(k, t[k]); });
   localStorage.setItem('trusted_theme', theme);
 }
 
@@ -325,15 +310,12 @@ function applyFontSize(val) {
   localStorage.setItem('trusted_fontsize', val);
 }
 
-function saveTarget(val) {
-  localStorage.setItem('trusted_target', val);
-  var fb = document.getElementById('targetFeedback');
-  var n = parseInt(val);
-  if (!val || isNaN(n)) { fb.textContent = ''; return; }
-  if (n >= 90)       { fb.style.color='#27ae60'; fb.textContent = '🎯 Excellent target! You can do it!'; }
-  else if (n >= 75)  { fb.style.color='var(--teal)'; fb.textContent = '👍 Good target — stay consistent!'; }
-  else if (n >= 60)  { fb.style.color='var(--warm)'; fb.textContent = '📈 Aim higher — you have potential!'; }
-  else               { fb.style.color='var(--red)'; fb.textContent = '⚠️ Consider raising your target.'; }
+function saveTarget(val) { localStorage.setItem('trusted_target', val); }
+
+function saveGradePref(cb) {
+  var checked = [];
+  document.querySelectorAll('.grade-pref-item input:checked').forEach(function(c){ checked.push(c.value); });
+  localStorage.setItem('trusted_grades', JSON.stringify(checked));
 }
 
 function saveExamDate(val) {
@@ -344,47 +326,89 @@ function saveExamDate(val) {
 
 function updateCountdown(dateStr) {
   var el = document.getElementById('countdownDisplay');
-  if (!dateStr) { el.classList.remove('show'); return; }
+  if (!el || !dateStr) return;
   var exam = new Date(dateStr);
-  var now  = new Date();
-  now.setHours(0,0,0,0);
+  var now  = new Date(); now.setHours(0,0,0,0);
   var diff = Math.ceil((exam - now) / (1000*60*60*24));
   el.classList.add('show');
-  if (diff < 0) {
-    el.innerHTML = '<div class="countdown-days">Done!</div><div class="countdown-label">Your exam has passed.</div>';
-  } else if (diff === 0) {
-    el.innerHTML = '<div class="countdown-days">Today!</div><div class="countdown-label">Exam day — all the best!</div>';
-  } else {
-    el.innerHTML = '<div class="countdown-days">' + diff + '</div><div class="countdown-label">days until your Board Exam</div><div class="countdown-date">' + exam.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}) + '</div>';
+  if (diff < 0)       { el.innerHTML = '<div class="countdown-days">Done!</div><div class="countdown-label">Your exam has passed.</div>'; }
+  else if (diff === 0){ el.innerHTML = '<div class="countdown-days">Today!</div><div class="countdown-label">Exam day — all the best!</div>'; }
+  else { el.innerHTML = '<div class="countdown-days">'+diff+'</div><div class="countdown-label">days until Board Exam</div><div class="countdown-date">'+exam.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})+'</div>'; }
+}
+
+/* SECURITY FUNCTIONS */
+var sessionTimeoutTimer = null;
+var _timeoutMs = 0;
+
+function setSessionTimeout(minutes) {
+  localStorage.setItem('trusted_timeout', minutes);
+  clearTimeout(sessionTimeoutTimer);
+  _timeoutMs = parseInt(minutes) * 60 * 1000;
+  if (!minutes || minutes === '0' || !_timeoutMs) return;
+  sessionTimeoutTimer = setTimeout(function() { alert('Session timed out due to inactivity.'); signOut(); }, _timeoutMs);
+}
+
+function clearTrustedDevice() {
+  if (!confirm('Clear this trusted device? You will need to sign in again.')) return;
+  localStorage.removeItem('trusted_device'); localStorage.removeItem('trusted_activity'); sessionStorage.clear();
+  alert('Trusted device cleared.'); signOut();
+}
+
+function exportActivityLog() {
+  var logs = JSON.parse(localStorage.getItem('trusted_activity') || '[]');
+  if (!logs.length) { alert('No activity to export.'); return; }
+  var csv = 'Type,Name,Email,Date,Time\n';
+  logs.forEach(function(l) {
+    var d = new Date(l.time);
+    csv += [l.type, l.name, l.email, d.toLocaleDateString('en-GB'), d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})].join(',') + '\n';
+  });
+  var blob = new Blob([csv], {type:'text/csv'});
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'TrustED_LoginHistory_' + new Date().toISOString().slice(0,10) + '.csv'; a.click();
+}
+
+function clearAllData() {
+  if (!confirm('Wipe ALL preferences, login history and settings?')) return;
+  localStorage.clear(); sessionStorage.clear(); location.reload();
+}
+
+function renderSecurityLog() {
+  var el = document.getElementById('secLogList'); if (!el) return;
+  var logs = JSON.parse(localStorage.getItem('trusted_activity') || '[]').slice(0,20);
+  if (!logs.length) { el.innerHTML = '<div style="padding:14px;font-size:12px;color:var(--text-light);">No login history yet.</div>'; return; }
+  el.innerHTML = logs.map(function(l) {
+    var d = new Date(l.time);
+    return '<div class="sec-log-item"><div class="sec-log-dot '+(l.type==='login'?'in':'out')+'"></div>'
+      +'<span class="sec-log-text">'+(l.type==='login'?'Signed in':'Signed out')+' · '+l.name+'</span>'
+      +'<span class="sec-log-time">'+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</span></div>';
+  }).join('');
+}
+
+function updateSecurityTab() {
+  renderSecurityLog();
+  var el = document.getElementById('secDeviceMeta');
+  if (el) {
+    var fs = localStorage.getItem('trusted_device_first');
+    if (!fs) { fs = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}); localStorage.setItem('trusted_device_first', fs); }
+    el.textContent = 'First seen: ' + fs;
   }
+  var sel = document.getElementById('timeoutSelect'); var saved = localStorage.getItem('trusted_timeout');
+  if (sel && saved) sel.value = saved;
 }
 
 function restoreSettings() {
-  // Theme
   var theme = localStorage.getItem('trusted_theme');
-  if (theme) {
-    var btn = document.querySelector('.theme-btn[onclick*="\''+theme+'\'"]');
-    if (btn) setTheme(theme, btn);
-  }
-  // Font size
+  if (theme) { var b = document.querySelector('.theme-btn[onclick*=\'\'' + theme + '\'\''); if (b) setTheme(theme, b); }
   var fs = localStorage.getItem('trusted_fontsize');
-  if (fs) {
-    var sl = document.getElementById('fontSlider');
-    if (sl) { sl.value = fs; applyFontSize(fs); }
-  }
-  // Target
-  var target = localStorage.getItem('trusted_target');
-  if (target) {
-    var ti = document.getElementById('targetInput');
-    if (ti) { ti.value = target; saveTarget(target); }
-  }
-  // Exam date
+  if (fs) { var sl = document.getElementById('fontSlider'); if (sl) { sl.value = fs; applyFontSize(fs); } }
   var ed = localStorage.getItem('trusted_examdate');
-  if (ed) {
-    var di = document.getElementById('examDate');
-    if (di) { di.value = ed; updateCountdown(ed); }
-  }
+  if (ed) { var di = document.getElementById('examDate'); if (di) { di.value = ed; updateCountdown(ed); } }
+  var grades = JSON.parse(localStorage.getItem('trusted_grades') || '[]');
+  grades.forEach(function(g) { var cb = document.querySelector('.grade-pref-item input[value="'+g+'"]'); if (cb) cb.checked = true; });
+  var to = localStorage.getItem('trusted_timeout');
+  if (to) { var sel = document.getElementById('timeoutSelect'); if (sel) sel.value = to; }
 }
+
 
 /* NAV */
 function switchPage(pageId, navEl) {
@@ -1113,6 +1137,45 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .ps-close{color:var(--red);}
 mark.search-hl{background:#fff176;border-radius:2px;padding:0 1px;}
 mark.search-hl-active{background:#ff9800;color:#fff;border-radius:2px;}
+.forest-prev{background:linear-gradient(135deg,#1a2e1a,#2d5a2d);}
+.midnight-prev{background:linear-gradient(135deg,#0a0a1a,#1a1a3a);}
+.slate-prev{background:linear-gradient(135deg,#2a3040,#3a4560);}
+/* Grade pref */
+.grade-pref-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.grade-pref-item{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;font-weight:600;color:var(--text-mid);cursor:pointer;transition:all .2s;}
+.grade-pref-item:has(input:checked){background:var(--teal-light);border-color:var(--teal);color:var(--teal);}
+.grade-pref-item input{accent-color:var(--teal);}
+/* Security tab */
+.sec-select{padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--white);outline:none;cursor:pointer;}
+.sec-select:focus{border-color:var(--teal);}
+.sec-device-card{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;gap:12px;}
+.sec-device-name{font-size:13px;font-weight:600;color:var(--dark);}
+.sec-device-meta{font-size:11px;color:var(--text-light);margin-top:2px;}
+.sec-danger-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;background:var(--red-light);color:var(--red);border:1.5px solid #f5c6c6;border-radius:var(--r);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'DM Sans',sans-serif;}
+.sec-danger-btn:hover{background:#fbd5d5;border-color:var(--red);}
+.sec-danger-zone{border:1.5px solid #f5c6c6;background:var(--red-light);}
+.sec-danger-zone h3{color:var(--red);}
+.sec-log-list{max-height:200px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--teal-mid) var(--bg);}
+.sec-log-list::-webkit-scrollbar{width:4px;}
+.sec-log-list::-webkit-scrollbar-thumb{background:var(--teal-mid);border-radius:10px;}
+.sec-log-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px;}
+.sec-log-item:last-child{border-bottom:none;}
+.sec-log-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sec-log-dot.in{background:#27ae60;}
+.sec-log-dot.out{background:var(--red);}
+.sec-log-text{flex:1;color:var(--text-mid);}
+.sec-log-time{color:var(--text-light);white-space:nowrap;}
+/* Support card */
+.support-card{background:var(--white);border:1px solid var(--border);border-top:none;padding:14px 36px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.support-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--dark-teal),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;}
+.support-info{flex:1;min-width:0;}
+.support-name{font-size:13px;font-weight:700;color:var(--dark);}
+.support-role{font-size:11px;color:var(--text-light);margin-top:1px;}
+.support-actions{display:flex;align-items:center;gap:12px;}
+.support-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:600;text-decoration:none;transition:all .2s;}
+.support-email{background:var(--dark-teal);color:#fff;}
+.support-email:hover{background:var(--teal);}
+.support-hours{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-light);}
 /* FOOTER */
 footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:18px 36px;display:flex;justify-content:space-between;align-items:center;}
 .footer-copy{font-size:12px;color:var(--text-light);}
@@ -1453,6 +1516,10 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
      Account
     </button>
+    <button class="stab-btn" onclick="switchSettingsTab('security-s',this);updateSecurityTab();">
+     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+     Security
+    </button>
    </div>
 
    <!-- Tab: General -->
@@ -1466,14 +1533,23 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
     <div class="settings-section">
      <h3>Theme</h3>
      <div class="theme-options">
-      <button class="theme-btn active" onclick="setTheme('light',this)">
+      <button class="theme-btn active" onclick="setTheme('light',this)" title="Light">
        <span class="theme-preview light-prev"></span>Light
       </button>
-      <button class="theme-btn" onclick="setTheme('dark',this)">
+      <button class="theme-btn" onclick="setTheme('dark',this)" title="Dark">
        <span class="theme-preview dark-prev"></span>Dark
       </button>
-      <button class="theme-btn" onclick="setTheme('sepia',this)">
+      <button class="theme-btn" onclick="setTheme('sepia',this)" title="Sepia">
        <span class="theme-preview sepia-prev"></span>Sepia
+      </button>
+      <button class="theme-btn" onclick="setTheme('forest',this)" title="Forest">
+       <span class="theme-preview forest-prev"></span>Forest
+      </button>
+      <button class="theme-btn" onclick="setTheme('midnight',this)" title="Midnight">
+       <span class="theme-preview midnight-prev"></span>Midnight
+      </button>
+      <button class="theme-btn" onclick="setTheme('slate',this)" title="Slate">
+       <span class="theme-preview slate-prev"></span>Slate
       </button>
      </div>
     </div>
@@ -1498,23 +1574,37 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
    <!-- Tab: Academic -->
    <div class="stab-content" id="stab-academic">
     <div class="settings-section">
-     <h3>Board Exam Target</h3>
-     <p style="font-size:12px;color:var(--text-light);margin-bottom:16px;">Set your target percentage for the upcoming Board Exams.</p>
-     <div class="target-wrap">
-      <input type="number" id="targetInput" min="0" max="100" placeholder="e.g. 90"
-       class="target-input" oninput="saveTarget(this.value)">
-      <span class="target-pct">%</span>
+     <h3>Academic Calendar</h3>
+     <p style="font-size:12px;color:var(--text-light);margin-bottom:16px;">Set key school dates to stay on track throughout the year.</p>
+     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div>
+       <label class="form-label" style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Term Start Date</label>
+       <input type="date" id="termStart" class="target-input" style="width:100%;" onchange="localStorage.setItem('trusted_termstart',this.value)">
+      </div>
+      <div>
+       <label class="form-label" style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Term End Date</label>
+       <input type="date" id="termEnd" class="target-input" style="width:100%;" onchange="localStorage.setItem('trusted_termend',this.value)">
+      </div>
+      <div>
+       <label class="form-label" style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Board Exam Date</label>
+       <input type="date" id="examDate" class="target-input" style="width:100%;" onchange="saveExamDate(this.value)">
+      </div>
+      <div>
+       <label class="form-label" style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px;">Parent-Teacher Meeting</label>
+       <input type="date" id="ptmDate" class="target-input" style="width:100%;" onchange="localStorage.setItem('trusted_ptm',this.value)">
+      </div>
      </div>
-     <div id="targetFeedback" class="target-feedback"></div>
+     <div id="countdownDisplay" class="countdown-display" style="margin-top:16px;"></div>
     </div>
     <div class="settings-section">
-     <h3>Exam Countdown</h3>
-     <p style="font-size:12px;color:var(--text-light);margin-bottom:16px;">Set your Board Exam date to track how many days are left.</p>
-     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
-      <input type="date" id="examDate" class="target-input" style="width:auto;" onchange="saveExamDate(this.value)">
-      <button class="btn btn-outline btn-sm" onclick="saveExamDate(document.getElementById('examDate').value)">Set Date</button>
+     <h3>Grade Teaching Preferences</h3>
+     <p style="font-size:12px;color:var(--text-light);margin-bottom:14px;">Select the grades you teach — the NCERT library will highlight these by default.</p>
+     <div class="grade-pref-grid">
+      <label class="grade-pref-item"><input type="checkbox" value="9" onchange="saveGradePref(this)"> Class 9</label>
+      <label class="grade-pref-item"><input type="checkbox" value="10" onchange="saveGradePref(this)"> Class 10</label>
+      <label class="grade-pref-item"><input type="checkbox" value="11" onchange="saveGradePref(this)"> Class 11</label>
+      <label class="grade-pref-item"><input type="checkbox" value="12" onchange="saveGradePref(this)"> Class 12</label>
      </div>
-     <div id="countdownDisplay" class="countdown-display"></div>
     </div>
     <div class="settings-section">
      <h3>Quick Launch</h3>
@@ -1555,6 +1645,80 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
       Sign Out of TrustED
      </button>
     </div>
+   </div>
+
+   <!-- Tab: Security -->
+   <div class="stab-content" id="stab-security-s">
+
+    <!-- Session Security -->
+    <div class="settings-section">
+     <h3>Session Security</h3>
+     <div class="setting-row">
+      <div class="setting-info"><h4>Auto Session Timeout</h4><p>Automatically sign out after a period of inactivity.</p></div>
+      <div style="display:flex;align-items:center;gap:10px;">
+       <select id="timeoutSelect" class="sec-select" onchange="setSessionTimeout(this.value)">
+        <option value="0">Off</option>
+        <option value="15">15 min</option>
+        <option value="30" selected>30 min</option>
+        <option value="60">1 hour</option>
+        <option value="120">2 hours</option>
+       </select>
+      </div>
+     </div>
+     <div class="setting-row">
+      <div class="setting-info"><h4>Login Activity Alerts</h4><p>Show a notification each time you sign in from this device.</p></div>
+      <div class="toggle" id="toggleLoginAlert"></div>
+     </div>
+     <div class="setting-row">
+      <div class="setting-info"><h4>Single Session Only</h4><p>Prevent the portal from running in multiple tabs simultaneously.</p></div>
+      <div class="toggle off" id="toggleSingleSession"></div>
+     </div>
+    </div>
+
+    <!-- Password & Login -->
+    <div class="settings-section">
+     <h3>Trusted Devices</h3>
+     <p style="font-size:12px;color:var(--text-light);margin-bottom:14px;">This browser has been recorded as a trusted device. You can clear this to force re-authentication.</p>
+     <div class="sec-device-card">
+      <div>
+       <div class="sec-device-name" id="secDeviceName">This Browser</div>
+       <div class="sec-device-meta" id="secDeviceMeta">First seen: —</div>
+      </div>
+      <span class="acc-status">🟢 Active</span>
+     </div>
+     <button class="sec-danger-btn" style="margin-top:12px;" onclick="clearTrustedDevice()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+      Clear Trusted Device
+     </button>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="settings-section">
+     <h3>Login History</h3>
+     <p style="font-size:12px;color:var(--text-light);margin-bottom:14px;">Full record of all sign-ins and sign-outs on this device.</p>
+     <div class="sec-log-list" id="secLogList"></div>
+     <div style="display:flex;gap:10px;margin-top:12px;">
+      <button class="btn btn-outline btn-sm" onclick="exportActivityLog()">
+       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+       Export Log
+      </button>
+      <button class="sec-danger-btn" onclick="clearActivity()">Clear All History</button>
+     </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="settings-section sec-danger-zone">
+     <h3>Danger Zone</h3>
+     <div class="setting-row">
+      <div class="setting-info"><h4>Sign Out All Sessions</h4><p>Clears all stored session data and signs you out immediately.</p></div>
+      <button class="sec-danger-btn" onclick="signOut()">Sign Out Now</button>
+     </div>
+     <div class="setting-row">
+      <div class="setting-info"><h4>Clear All Site Data</h4><p>Wipes all preferences, login history, and cached data from this browser.</p></div>
+      <button class="sec-danger-btn" onclick="clearAllData()">Clear Data</button>
+     </div>
+    </div>
+
    </div>
 
   </div>
@@ -1600,9 +1764,28 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <div class="footer-links">
  <a class="footer-link" href="https://studentprivacy.ed.gov/ferpa" target="_blank">Privacy Policy</a>
  <a class="footer-link" href="https://staysafeonline.org" target="_blank">Cyber Resources</a>
- <a class="footer-link" href="/cdn-cgi/l/email-protection#b3c0c6c3c3dcc1c7f3dfdcc7c6c0c5d2dfdfd6cad4c6c1d4d2dcdd9dd0dcde">Contact Support</a>
+ <a class="footer-link" href="mailto:samad.tariq11@gmail.com">Contact Support</a>
  </div>
  </footer>
+
+ <!-- CONTACT SUPPORT CARD (floating above footer) -->
+ <div class="support-card">
+  <div class="support-avatar">ST</div>
+  <div class="support-info">
+   <div class="support-name">Samad Tariq</div>
+   <div class="support-role">Portal Developer · Class X Andes, Lotus Valley</div>
+  </div>
+  <div class="support-actions">
+   <a href="mailto:samad.tariq11@gmail.com" class="support-btn support-email" title="Email Support">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+    Email
+   </a>
+   <div class="support-hours">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    School hours · Mon–Fri
+   </div>
+  </div>
+ </div>
  </div><!-- /main -->
 </div><!-- /appShell -->
 
