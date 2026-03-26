@@ -95,6 +95,13 @@ function launchApp() {
  }
  if (sn) sn.textContent = currentUser.name;
  if (se) se.textContent = currentUser.email;
+ // Calculate integrity score
+ setTimeout(calcIntegrity, 200);
+ // Restore session timeout if set
+ var savedTimeout = localStorage.getItem('trusted_timeout');
+ if (savedTimeout && savedTimeout !== '0') setSessionTimeout(savedTimeout);
+ // Restore single session if set
+ if (localStorage.getItem('trusted_singlesession') === '1') setSingleSession(true);
 }
 
 function signOut() {
@@ -394,6 +401,11 @@ function updateSecurityTab() {
   }
   var sel = document.getElementById('timeoutSelect'); var saved = localStorage.getItem('trusted_timeout');
   if (sel && saved) sel.value = saved;
+  // Restore toggle states
+  var la = document.getElementById('toggleLoginAlert');
+  if (la) { if (localStorage.getItem('trusted_loginalert')==='1') la.classList.remove('off'); else la.classList.add('off'); }
+  var ss = document.getElementById('toggleSingleSession');
+  if (ss) { if (localStorage.getItem('trusted_singlesession')==='1') ss.classList.remove('off'); else ss.classList.add('off'); }
 }
 
 function restoreSettings() {
@@ -409,6 +421,126 @@ function restoreSettings() {
   if (to) { var sel = document.getElementById('timeoutSelect'); if (sel) sel.value = to; }
 }
 
+
+/* SUPPORT MODAL */
+function toggleSupportModal() {
+  var m = document.getElementById('supportModal');
+  m.classList.toggle('open');
+}
+// Close on backdrop click
+document.addEventListener('click', function(e) {
+  var m = document.getElementById('supportModal');
+  if (m && m.classList.contains('open') && e.target === m) m.classList.remove('open');
+});
+
+/* INTEGRITY CHECKLIST */
+function calcIntegrity() {
+  var checks = [
+    { label: 'Signed in with Google',       done: !!currentUser },
+    { label: 'School domain verified',       done: currentUser && currentUser.email && currentUser.email.endsWith('@lotusvalleygurgaon.com') },
+    { label: 'Session active & secure',      done: !!sessionStorage.getItem('tu') },
+    { label: 'Login activity logging on',    done: !document.getElementById('toggleLoginAlert') || !document.getElementById('toggleLoginAlert').classList.contains('off') },
+    { label: 'Session timeout configured',   done: !!localStorage.getItem('trusted_timeout') && localStorage.getItem('trusted_timeout') !== '0' },
+    { label: 'Set up an Authenticator App',  done: false, action: 'security' },
+    { label: 'Enable 2FA on Google account', done: false, action: 'security' },
+    { label: 'Use a Password Manager',       done: false, action: null },
+    { label: 'Set up Passkeys on account',   done: false, action: 'security' },
+  ];
+  var done = checks.filter(function(c){ return c.done; }).length;
+  var pct  = Math.round((done / checks.length) * 100);
+  var scoreEl = document.getElementById('integrityScore');
+  var subEl   = document.getElementById('integritySubtitle');
+  var listEl  = document.getElementById('integrityChecklist');
+  if (!scoreEl) return;
+  scoreEl.textContent = 'System Integrity: ' + pct + '%';
+  if (pct === 100)      { subEl.textContent = 'All security protocols active!'; }
+  else if (pct >= 66)   { subEl.textContent = 'Good — ' + (checks.length - done) + ' items left to complete'; }
+  else if (pct >= 33)   { subEl.textContent = 'Fair — complete the checklist below'; }
+  else                  { subEl.textContent = 'Action needed — see checklist below'; }
+  listEl.innerHTML = checks.map(function(ch) {
+    return '<div class="integrity-checklist-item">'
+      + '<div class="ic-dot ' + (ch.done ? 'done' : 'todo') + '"></div>'
+      + '<span>' + (ch.done ? '✓ ' : '○ ') + ch.label + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function toggleIntegrityPanel() {
+  var el = document.getElementById('integrityChecklist');
+  var hint = el.parentElement.querySelector('[style*="Click"]');
+  if (!el) return;
+  var open = el.style.display === 'block';
+  el.style.display = open ? 'none' : 'block';
+  if (hint) hint.textContent = open ? 'Click to see checklist ▾' : 'Click to hide ▴';
+}
+
+/* ════ FIXED SECURITY FUNCTIONS ════ */
+var _sessionTimer = null;
+var _sessionMs = 0;
+var _sessionActive = false;
+
+function setSessionTimeout(minutes) {
+  localStorage.setItem('trusted_timeout', minutes);
+  clearTimeout(_sessionTimer);
+  _sessionMs = parseInt(minutes) * 60 * 1000;
+  if (!minutes || minutes === '0' || !_sessionMs) {
+    _sessionActive = false;
+    return;
+  }
+  _sessionActive = true;
+  _startSessionTimer();
+  // Reset on any user interaction
+  ['click','keydown','mousemove','touchstart'].forEach(function(evt) {
+    document.removeEventListener(evt, _resetSessionTimer);
+    document.addEventListener(evt, _resetSessionTimer, {passive:true});
+  });
+}
+
+function _startSessionTimer() {
+  clearTimeout(_sessionTimer);
+  if (!_sessionActive || !_sessionMs) return;
+  _sessionTimer = setTimeout(function() {
+    if (currentUser) {
+      alert('You have been signed out due to ' + (localStorage.getItem('trusted_timeout')) + ' minutes of inactivity.');
+      signOut();
+    }
+  }, _sessionMs);
+}
+
+function _resetSessionTimer() {
+  if (_sessionActive && _sessionMs) _startSessionTimer();
+}
+
+/* Single session — uses BroadcastChannel to detect other tabs */
+var _singleSessionChannel = null;
+var _singleSessionEnabled = false;
+
+function setSingleSession(enabled) {
+  _singleSessionEnabled = enabled;
+  localStorage.setItem('trusted_singlesession', enabled ? '1' : '0');
+  if (!enabled) {
+    if (_singleSessionChannel) _singleSessionChannel.close();
+    _singleSessionChannel = null;
+    return;
+  }
+  if (!window.BroadcastChannel) return; // not supported
+  _singleSessionChannel = new BroadcastChannel('trusted_session');
+  // Announce our tab
+  _singleSessionChannel.postMessage({type:'ping', id: _tabId});
+  // Listen for other tabs
+  _singleSessionChannel.onmessage = function(e) {
+    if (e.data.type === 'ping' && e.data.id !== _tabId) {
+      // Another tab opened — sign this one out
+      if (currentUser) {
+        _singleSessionChannel.postMessage({type:'takeover', id: _tabId});
+        alert('TrustED is already open in another tab. This tab will be signed out.');
+        signOut();
+      }
+    }
+  };
+}
+
+var _tabId = Math.random().toString(36).slice(2);
 
 /* NAV */
 function switchPage(pageId, navEl) {
@@ -1176,6 +1308,26 @@ mark.search-hl-active{background:#ff9800;color:#fff;border-radius:2px;}
 .support-email{background:var(--dark-teal);color:#fff;}
 .support-email:hover{background:var(--teal);}
 .support-hours{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-light);}
+/* SUPPORT MODAL */
+#supportModal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;}
+#supportModal.open{display:flex;}
+.support-modal-card{background:var(--white);border-radius:var(--rl);width:380px;max-width:94vw;box-shadow:0 32px 80px rgba(0,0,0,.35);overflow:hidden;}
+.support-modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;}
+.support-modal-title{font-family:'Lora',serif;font-size:17px;font-weight:700;color:var(--dark);}
+.support-modal-sub{font-size:11px;color:var(--text-light);margin-top:2px;}
+.support-modal-body{padding:28px 24px;text-align:center;}
+.support-modal-avatar{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--dark-teal),var(--accent));display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:22px;margin-bottom:12px;}
+.support-modal-name{font-family:'Lora',serif;font-size:20px;font-weight:700;color:var(--dark);margin-bottom:4px;}
+.support-modal-role{font-size:12px;color:var(--text-light);margin-bottom:20px;line-height:1.5;}
+.support-modal-email-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;background:var(--dark-teal);color:#fff;border-radius:24px;font-size:13px;font-weight:600;text-decoration:none;transition:background .2s;margin-bottom:14px;}
+.support-modal-email-btn:hover{background:var(--teal);}
+.support-modal-hours{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:var(--text-mid);margin-bottom:8px;}
+.support-modal-note{font-size:11px;color:var(--text-light);font-style:italic;}
+/* INTEGRITY CHECKLIST */
+.integrity-checklist-item{display:flex;align-items:center;gap:8px;font-size:11px;margin-bottom:7px;opacity:.9;}
+.ic-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ic-dot.done{background:#27ae60;}
+.ic-dot.todo{background:rgba(255,255,255,.3);}
 /* FOOTER */
 footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:18px 36px;display:flex;justify-content:space-between;align-items:center;}
 .footer-copy{font-size:12px;color:var(--text-light);}
@@ -1306,11 +1458,13 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <h1 class="welcome-title">Welcome back,<br><em id="dashName">Professor.</em></h1>
  <p class="welcome-sub">Your digital classroom is secured. Today is a perfect day to explore new AI pedagogical tools and verify research integrity.</p>
  </div>
- <div class="integrity-card">
+ <div class="integrity-card" style="min-width:270px;cursor:pointer;" onclick="toggleIntegrityPanel()">
  <span class="integrity-icon">🛡️</span>
  <span class="secure-badge">Secure Session</span>
- <div class="integrity-pct">System Integrity: 100%</div>
- <div class="integrity-sub">All educator protocols are active.</div>
+ <div class="integrity-pct" id="integrityScore">Checking...</div>
+ <div class="integrity-sub" id="integritySubtitle">Calculating your security score</div>
+ <div id="integrityChecklist" class="integrity-checklist" style="display:none;margin-top:14px;border-top:1px solid rgba(255,255,255,.15);padding-top:12px;"></div>
+ <div style="font-size:10px;opacity:.5;margin-top:10px;text-align:right;">Click to see checklist ▾</div>
  </div>
  </div>
  <div class="section-header">
@@ -1667,11 +1821,11 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
      </div>
      <div class="setting-row">
       <div class="setting-info"><h4>Login Activity Alerts</h4><p>Show a notification each time you sign in from this device.</p></div>
-      <div class="toggle" id="toggleLoginAlert"></div>
+      <div class="toggle" id="toggleLoginAlert" onclick="localStorage.setItem('trusted_loginalert', this.classList.contains('off')?'1':'0')"></div>
      </div>
      <div class="setting-row">
       <div class="setting-info"><h4>Single Session Only</h4><p>Prevent the portal from running in multiple tabs simultaneously.</p></div>
-      <div class="toggle off" id="toggleSingleSession"></div>
+      <div class="toggle off" id="toggleSingleSession" onclick="this.classList.toggle('off');setSingleSession(!this.classList.contains('off'));calcIntegrity();"></div>
      </div>
     </div>
 
@@ -1764,32 +1918,40 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <div class="footer-links">
  <a class="footer-link" href="https://studentprivacy.ed.gov/ferpa" target="_blank">Privacy Policy</a>
  <a class="footer-link" href="https://staysafeonline.org" target="_blank">Cyber Resources</a>
- <a class="footer-link" href="mailto:samad.tariq11@gmail.com">Contact Support</a>
+ <a class="footer-link" href="#" onclick="toggleSupportModal();return false;">Contact Support</a>
  </div>
  </footer>
 
- <!-- CONTACT SUPPORT CARD (floating above footer) -->
- <div class="support-card">
-  <div class="support-avatar">ST</div>
-  <div class="support-info">
-   <div class="support-name">Samad Tariq</div>
-   <div class="support-role">Portal Developer · Class X Andes, Lotus Valley</div>
-  </div>
-  <div class="support-actions">
-   <a href="mailto:samad.tariq11@gmail.com" class="support-btn support-email" title="Email Support">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
-    Email
-   </a>
-   <div class="support-hours">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-    School hours · Mon–Fri
+ <!-- CONTACT SUPPORT MODAL -->
+ <div id="supportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:none;align-items:center;justify-content:center;">
+  <div class="support-modal-card">
+   <div class="support-modal-header">
+    <div>
+     <div class="support-modal-title">Contact Support</div>
+     <div class="support-modal-sub">Reach out for help with TrustED</div>
+    </div>
+    <button class="bell-close-btn" onclick="toggleSupportModal()">✕</button>
+   </div>
+   <div class="support-modal-body">
+    <div class="support-modal-avatar">ST</div>
+    <div class="support-modal-name">Samad Tariq</div>
+    <div class="support-modal-role">Portal Developer · Class X Andes, Lotus Valley International School</div>
+    <a href="mailto:samad.tariq11@gmail.com" class="support-modal-email-btn">
+     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+     samad.tariq11@gmail.com
+    </a>
+    <div class="support-modal-hours">
+     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+     Available during school hours · Monday to Friday
+    </div>
+    <div class="support-modal-note">Usually responds within 24 hours on school days.</div>
    </div>
   </div>
  </div>
  </div><!-- /main -->
 </div><!-- /appShell -->
 
-<script>document.addEventListener("DOMContentLoaded", function() {
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>document.addEventListener("DOMContentLoaded", function() {
  var saved = sessionStorage.getItem("tu");
  if (saved) { try { currentUser = JSON.parse(saved); launchApp(); } catch(e){} }
  document.querySelectorAll(".toggle").forEach(function(t){
@@ -1808,12 +1970,4 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  document.addEventListener("click", function(e) {
    var panel = document.getElementById("bellPanel");
    if (!panel || panel.style.display !== "block") return;
-   var bellBtn = document.querySelector("[onclick*='toggleBell']");
-   if (!panel.contains(e.target) && bellBtn && !bellBtn.contains(e.target)) {
-     panel.style.display = "none";
-   }
- });
-});
-</script>
-</body>
-</html>
+   var bellBtn = doc
