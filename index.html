@@ -311,10 +311,19 @@ function signOut() {
 }
 
 /* ════ LOGIN ACTIVITY TRACKER ════ */
+function toggleActivityLogSetting(el) {
+  el.classList.toggle('off');
+  var enabled = !el.classList.contains('off');
+  localStorage.setItem('trusted_actlog', enabled ? '1' : '0');
+}
+
 function logActivity(type) {
   try {
+    // Respect the Activity Log toggle — only log if enabled
+    var logEnabled = localStorage.getItem('trusted_actlog');
+    // Default ON if never set, OFF if explicitly set to '0'
+    if (logEnabled === '0') return;
     var logs = JSON.parse(localStorage.getItem('trusted_activity') || '[]');
-    // Sanitize all data before storing
     var entry = {
       type:  type === 'login' || type === 'logout' ? type : 'event',
       email: sanitizeText(currentUser ? currentUser.email : '—'),
@@ -509,8 +518,13 @@ function setTheme(theme, btn) {
 }
 
 function applyFontSize(val) {
+  val = parseInt(val);
   document.getElementById('fontSizeVal').textContent = val + 'px';
-  document.querySelector('.content').style.fontSize = val + 'px';
+  // Apply to body so all text on the page scales
+  document.body.style.fontSize = val + 'px';
+  // Also scale the content area explicitly
+  var contentEls = document.querySelectorAll('.content, .page');
+  contentEls.forEach(function(el){ el.style.fontSize = val + 'px'; });
   localStorage.setItem('trusted_fontsize', val);
 }
 
@@ -619,6 +633,11 @@ function restoreSettings() {
   grades.forEach(function(g) { var cb = document.querySelector('.grade-pref-item input[value="'+g+'"]'); if (cb) cb.checked = true; });
   var to = localStorage.getItem('trusted_timeout');
   if (to) { var sel = document.getElementById('timeoutSelect'); if (sel) sel.value = to; }
+  // Restore activity log toggle
+  var actlog = localStorage.getItem('trusted_actlog');
+  var actEl = document.getElementById('toggleActivityLog');
+  if (actEl && actlog === '1') actEl.classList.remove('off');
+  else if (actEl && actlog === '0') actEl.classList.add('off');
 }
 
 
@@ -2183,7 +2202,7 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
      <h3>Privacy &amp; Security</h3>
      <div class="setting-row"><div class="setting-info"><h4>Two-Factor Authentication</h4><p>Require 2FA every login. <a href="#" onclick="switchPage('security',document.querySelectorAll('.nav-item')[2]);return false;" class="inline-link">Set up →</a></p></div><div class="toggle"></div></div>
      <div class="setting-row"><div class="setting-info"><h4>Session Timeout</h4><p>Auto log-out after 30 minutes of inactivity.</p></div><div class="toggle"></div></div>
-     <div class="setting-row"><div class="setting-info"><h4>Activity Log</h4><p>Keep a log of logins and document scans.</p></div><div class="toggle off"></div></div>
+     <div class="setting-row"><div class="setting-info"><h4>Activity Log</h4><p>Keep a log of logins and document scans.</p></div><div class="toggle off" id="toggleActivityLog" onclick="toggleActivityLogSetting(this)"></div></div>
     </div>
    </div>
 
