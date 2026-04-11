@@ -17,13 +17,171 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TrustED — Lotus Valley International School</title>
 <!-- SECURITY HEADERS via meta -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self' https://accounts.google.com https://fonts.googleapis.com https://fonts.gstatic.com; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; connect-src 'self' https://ncert.nic.in; frame-ancestors 'none';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://www.gstatic.com https://securetoken.googleapis.com https://www.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https: blob:; frame-src https://accounts.google.com https://trusted-portal-84524.firebaseapp.com; connect-src 'self' https://accounts.google.com https://ncert.nic.in https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com wss://firestore.googleapis.com; frame-ancestors 'none';">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Firebase v10 Modular SDK via CDN -->
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithPopup, signOut as fbSignOut, onAuthStateChanged }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getFirestore, doc, setDoc, getDoc, serverTimestamp }
+    from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBaLoIg8eW6QTYd7So_kjY4uCndYWcWNkQ",
+    authDomain:        "trusted-portal-84524.firebaseapp.com",
+    projectId:         "trusted-portal-84524",
+    storageBucket:     "trusted-portal-84524.firebasestorage.app",
+    messagingSenderId: "578920539558",
+    appId:             "1:578920539558:web:e21bb2b87a607dce235b67"
+  };
+
+  const app      = initializeApp(firebaseConfig);
+  const auth     = getAuth(app);
+  const db       = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  // Expose to global scope so non-module functions can use them
+  window._fbAuth     = auth;
+  window._fbDb       = db;
+  window._fbProvider = provider;
+  window._fbDoc      = doc;
+  window._fbSetDoc   = setDoc;
+  window._fbGetDoc   = getDoc;
+  window._fbServerTs = serverTimestamp;
+  window._fbSignOut  = fbSignOut;
+
+  // ── Firebase Sign-In ──
+  window.firebaseSignIn = async function() {
+    if (!checkRateLimit()) return;
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user   = result.user;
+      const email  = sanitizeText(user.email || '');
+      const domain = email.split('@')[1] || '';
+      if (!validateEmail(email)) {
+        recordFailedAttempt();
+        showLoginError('⛔ Access denied. Only @' + ALLOWED_DOMAIN + ' accounts are permitted.');
+        await fbSignOut(auth);
+        return;
+      }
+      resetRateLimit();
+      const safeName    = sanitizeText(user.displayName || '');
+      const safeEmail   = email;
+      const safePicture = (user.photoURL && /^https:\/\//.test(user.photoURL)) ? user.photoURL : null;
+      currentUser = {
+        uid:      user.uid,
+        name:     safeName,
+        email:    safeEmail,
+        picture:  safePicture,
+        initials: initials(safeName),
+        loginAt:  Date.now()
+      };
+      // Save fingerprinted session
+      var sessionData = JSON.stringify({
+        ...currentUser,
+        _fp: btoa(safeEmail + navigator.userAgent.slice(0,20))
+      });
+      sessionStorage.setItem('tu', sessionData);
+      logSecurityEvent('login_success', safeEmail);
+      // Firestore: write lastLogin + read prefs
+      await syncFirestore(user.uid, safeEmail, safeName);
+      launchApp();
+    } catch(err) {
+      if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
+        recordFailedAttempt();
+        showLoginError('⚠️ Sign-in failed: ' + (err.message || 'Unknown error'));
+      }
+    }
+  };
+
+  // ── Firestore Sync ──
+  window.syncFirestore = async function(uid, email, name) {
+    try {
+      const userRef  = doc(db, 'users', uid);
+      const snap     = await getDoc(userRef);
+      // Write lastLogin (always)
+      await setDoc(userRef, {
+        email:     email,
+        name:      name,
+        lastLogin: serverTimestamp()
+      }, { merge: true });
+      // If existing prefs found, apply them
+      if (snap.exists()) {
+        const data = snap.data();
+        // Apply theme
+        if (data.themePreference) {
+          var btn = document.querySelector('.theme-btn[onclick*=\'"' + data.themePreference + '"\']') ||
+                    document.querySelector('.theme-btn[title="' + data.themePreference.charAt(0).toUpperCase() + data.themePreference.slice(1) + '"]');
+          if (btn) setTheme(data.themePreference, btn);
+          localStorage.setItem('trusted_theme', data.themePreference);
+        }
+        // Apply targetPercentage (academic tab)
+        if (data.targetPercentage !== undefined) {
+          var ti = document.getElementById('targetInput');
+          if (ti) { ti.value = data.targetPercentage; saveTarget(data.targetPercentage); }
+          localStorage.setItem('trusted_target', data.targetPercentage);
+        }
+      }
+    } catch(err) {
+      console.warn('Firestore sync failed:', err.message);
+    }
+  };
+
+  // ── Save to Firestore whenever theme changes ──
+  window.saveThemeToFirestore = async function(theme) {
+    if (!currentUser || !currentUser.uid) return;
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid), { themePreference: theme }, { merge: true });
+    } catch(e) {}
+  };
+
+  // ── Save targetPercentage to Firestore ──
+  window.saveTargetToFirestore = async function(val) {
+    if (!currentUser || !currentUser.uid) return;
+    try {
+      await setDoc(doc(db, 'users', currentUser.uid), { targetPercentage: parseInt(val) || 0 }, { merge: true });
+    } catch(e) {}
+  };
+
+  // ── Firebase Sign-Out ──
+  window.firebaseSignOutFn = async function() {
+    try { await fbSignOut(auth); } catch(e) {}
+  };
+
+  // ── Auth state observer (handles page refresh) ──
+  onAuthStateChanged(auth, async (user) => {
+    if (user && !currentUser) {
+      // User is still signed in after refresh — restore session from Firebase
+      const saved = sessionStorage.getItem('tu');
+      if (!saved) {
+        // No local session — re-populate from Firebase user object
+        const email = sanitizeText(user.email || '');
+        if (!validateEmail(email)) { await fbSignOut(auth); return; }
+        const safeName    = sanitizeText(user.displayName || '');
+        const safePicture = (user.photoURL && /^https:\/\//.test(user.photoURL)) ? user.photoURL : null;
+        currentUser = {
+          uid:      user.uid,
+          name:     safeName,
+          email:    email,
+          picture:  safePicture,
+          initials: initials(safeName),
+          loginAt:  Date.now()
+        };
+        sessionStorage.setItem('tu', JSON.stringify({
+          ...currentUser,
+          _fp: btoa(email + navigator.userAgent.slice(0,20))
+        }));
+        await syncFirestore(user.uid, email, safeName);
+        launchApp();
+      }
+    }
+  });
+</script>
 
 <script>
 // CONFIG 
@@ -299,6 +457,7 @@ function signOut() {
   _sessionActive = false;
   // Revoke Google session
   try { google.accounts.id.disableAutoSelect(); } catch(e){}
+  if (window.firebaseSignOutFn) firebaseSignOutFn();
   // Clear single-session channel
   try { if (_singleSessionChannel) { _singleSessionChannel.close(); _singleSessionChannel = null; } } catch(e){}
   document.getElementById('appShell').style.display    = 'none';
@@ -515,6 +674,7 @@ function setTheme(theme, btn) {
   var t = themes[theme] || themes.light;
   Object.keys(t).forEach(function(k){ root.style.setProperty(k, t[k]); });
   localStorage.setItem('trusted_theme', theme);
+  if (window.saveThemeToFirestore) saveThemeToFirestore(theme);
 }
 
 function applyFontSize(val) {
@@ -528,7 +688,10 @@ function applyFontSize(val) {
   localStorage.setItem('trusted_fontsize', val);
 }
 
-function saveTarget(val) { localStorage.setItem('trusted_target', val); }
+function saveTarget(val) {
+  localStorage.setItem('trusted_target', val);
+  if (window.saveTargetToFirestore) saveTargetToFirestore(val);
+}
 
 function saveGradePref(cb) {
   var checked = [];
@@ -1209,6 +1372,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .login-form-sub{font-size:12px;color:var(--text-mid);margin-bottom:24px;line-height:1.6;text-align:center;}
 .google-btn-wrap{display:flex;justify-content:center;width:100%;overflow:hidden;margin-bottom:16px;}
 .g_id_signin{display:flex;justify-content:center;}
+/* Firebase Sign-In Button */
+.firebase-signin-btn{width:100%;padding:12px 20px;background:#fff;border:1.5px solid var(--border);border-radius:var(--r);font-size:15px;font-weight:600;font-family:'DM Sans',sans-serif;color:#3c4043;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:all .2s;margin-bottom:4px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.firebase-signin-btn:hover{background:#f8f9fa;border-color:var(--teal);box-shadow:0 2px 8px rgba(0,0,0,.12);}
+.firebase-signin-btn:active{transform:scale(.98);}
+.firebase-signin-btn:disabled{opacity:.6;cursor:not-allowed;}
 #loginError{display:none;background:var(--red-light);border:1px solid #f5c6c6;border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px;line-height:1.5;}
 .lockout-timer{font-family:'DM Mono',monospace;font-weight:700;font-size:15px;margin-top:6px;color:var(--red);}
 .login-security-badges{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px;}
@@ -1822,25 +1990,11 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  <div class="login-form-title">Sign in with Google</div>
  <div class="login-form-sub">Use your school Google account.<br>In production, only <strong>@lotusvalleygurgaon.com</strong>accounts will be allowed.</div>
 
- <!-- Google Identity Services -->
- <div id="g_id_onload"
- data-client_id="494444176354-m3jlfvmkjom40pqetnm7e482vvtmo3jk.apps.googleusercontent.com"
- data-callback="handleCredentialResponse"
- data-auto_prompt="false"
- data-itp_support="true"
- data-cancel_on_tap_outside="true">
- </div>
- <div class="google-btn-wrap">
- <div class="g_id_signin"
- data-type="standard"
- data-size="large"
- data-theme="outline"
- data-text="sign_in_with"
- data-shape="rectangular"
- data-logo_alignment="left"
- data-width="340">
- </div>
- </div>
+ <!-- Firebase Google Sign-In Button -->
+ <button class="firebase-signin-btn" onclick="firebaseSignIn()" id="firebaseSignInBtn">
+  <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+  Sign in with Google
+ </button>
 
  <div id="loginError"></div>
  <div class="login-footer-note">Free for all Lotus Valley staff · No password required · No data stored</div>
@@ -2432,40 +2586,55 @@ footer{background:var(--sidebar-bg);border-top:1px solid var(--border);padding:1
  </div><!-- /main -->
 </div><!-- /appShell -->
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>document.addEventListener("DOMContentLoaded", function() {
- var saved = sessionStorage.getItem("tu");
- if (saved) {
-   try {
-     var parsed = JSON.parse(saved);
-     // Validate session integrity before restoring
-     if (validateStoredSession(parsed)) {
-       // Verify session fingerprint hasn't been tampered with
-       var expectedFp = btoa(parsed.email + navigator.userAgent.slice(0,20));
-       if (parsed._fp && parsed._fp === expectedFp) {
-         // Remove internal fields before using
-         currentUser = { name: parsed.name, email: parsed.email, picture: parsed.picture || null, initials: parsed.initials };
-         launchApp();
-       } else {
-         // Fingerprint mismatch — possible session hijack attempt
-         sessionStorage.clear();
-         logSecurityEvent('session_tamper_detected', 'fingerprint_mismatch');
-       }
-     } else {
-       sessionStorage.clear();
-       logSecurityEvent('invalid_session_data', 'validation_failed');
-     }
-   } catch(e) {
-     sessionStorage.clear();
-   }
- }
- document.querySelectorAll(".toggle").forEach(function(t){
-   t.addEventListener("click", function(){ t.classList.toggle("off"); });
- });
- renderBooks();
- initPageSearch();
- restoreSettings();
- // Close search dropdown when clicking outside
- document.addEventListener("click", function(e) {
-   var box = document.querySelector(".search-box");
-   var dd  = document.getElementById("searchDropdown");
-   if (dd && !box.contains(e.target)) { dd.st
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  // Restore session from sessionStorage (Firebase onAuthStateChanged handles refresh)
+  var saved = sessionStorage.getItem("tu");
+  if (saved && !currentUser) {
+    try {
+      var parsed = JSON.parse(saved);
+      if (validateStoredSession(parsed)) {
+        var expectedFp = btoa(parsed.email + navigator.userAgent.slice(0,20));
+        if (parsed._fp && parsed._fp === expectedFp) {
+          currentUser = { uid: parsed.uid||null, name: parsed.name, email: parsed.email, picture: parsed.picture||null, initials: parsed.initials };
+          launchApp();
+        } else {
+          sessionStorage.clear();
+          logSecurityEvent('session_tamper_detected', 'fingerprint_mismatch');
+        }
+      } else {
+        sessionStorage.clear();
+      }
+    } catch(e) { sessionStorage.clear(); }
+  }
+
+  // Wire toggles (only non-ID ones — ID ones have their own handlers)
+  document.querySelectorAll(".toggle:not([id])").forEach(function(t){
+    t.addEventListener("click", function(){ t.classList.toggle("off"); });
+  });
+
+  renderBooks();
+  initPageSearch();
+  restoreSettings();
+
+  // Close search dropdown when clicking outside
+  document.addEventListener("click", function(e) {
+    var box = document.querySelector(".search-box");
+    var dd  = document.getElementById("searchDropdown");
+    if (dd && box && !box.contains(e.target)) { dd.style.display = "none"; }
+  });
+
+  // Close bell panel when clicking outside
+  document.addEventListener("click", function(e) {
+    var panel = document.getElementById("bellPanel");
+    if (!panel || panel.style.display !== "block") return;
+    var bellBtn = document.querySelector("[onclick*='toggleBell']");
+    if (!panel.contains(e.target) && bellBtn && !bellBtn.contains(e.target)) {
+      panel.style.display = "none";
+    }
+  });
+});
+</script>
+</body>
+</html>
